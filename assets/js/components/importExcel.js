@@ -566,7 +566,10 @@ async function processKirUpload(workbook, progressBar, statusText, percentText) 
     
     // Check if Gemini AI matching is enabled
     const useGemini = document.getElementById('use-gemini-ai')?.checked;
-    const apiKey = document.getElementById('gemini-api-key')?.value?.trim();
+    let apiKey = document.getElementById('gemini-api-key')?.value?.trim();
+    if (!apiKey && typeof ENV !== 'undefined') {
+        apiKey = ENV.GEMINI_API_KEY;
+    }
     
     let aiFailed = false;
     
