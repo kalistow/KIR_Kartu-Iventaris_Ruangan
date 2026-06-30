@@ -1,6 +1,5 @@
 node_modules/
 .env
-assets/js/config/env.js
 .DS_Store
 dist/
 build/

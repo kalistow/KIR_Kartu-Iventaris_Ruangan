@@ -4,8 +4,7 @@
   "description": "Sistem Informasi Kartu Inventaris Ruangan",
   "main": "index.html",
   "scripts": {
-    "dev": "serve .",
-    "build": "node build.js"
+    "dev": "serve ."
   },
   "devDependencies": {
     "serve": "^14.2.1"
