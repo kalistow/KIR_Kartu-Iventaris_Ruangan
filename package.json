@@ -1,0 +1,15 @@
+{
+  "name": "simbar-kesbangpol",
+  "version": "1.0.0",
+  "description": "Sistem Informasi Kartu Inventaris Ruangan",
+  "main": "index.html",
+  "scripts": {
+    "dev": "serve ."
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.2"
+  }
+}

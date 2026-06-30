@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard SIM-KIR Kesbangpol (Claymorphism)</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Tailwind Config for Clean Professional Design -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        surface: '#ffffff',
+                        textMain: '#0f172a',
+                        textMuted: '#64748b',
+                        bodyBg: '#f8fafc',
+                        pastel: {
+                            blue: '#eff6ff',
+                            blueDark: '#2563eb',
+                            green: '#f0fdf4',
+                            greenDark: '#16a34a',
+                            yellow: '#fefce8',
+                            yellowDark: '#ca8a04',
+                            red: '#fef2f2',
+                            redDark: '#dc2626',
+                        }
+                    },
+                    boxShadow: {
+                        /* Clean modern shadows */
+                        'clay': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+                        'clay-sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                        'clay-pressed': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.05)',
+
+                        /* Colored subtle shadows */
+                        'clay-blue': '0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -2px rgba(59, 130, 246, 0.1)',
+                        'clay-green': '0 4px 6px -1px rgba(34, 197, 94, 0.1), 0 2px 4px -2px rgba(34, 197, 94, 0.1)',
+                        'clay-yellow': '0 4px 6px -1px rgba(234, 179, 8, 0.1), 0 2px 4px -2px rgba(234, 179, 8, 0.1)',
+                        'clay-red': '0 4px 6px -1px rgba(239, 68, 68, 0.1), 0 2px 4px -2px rgba(239, 68, 68, 0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .clay-btn {
+                @apply bg-surface text-textMain font-semibold border border-slate-300 shadow-sm rounded-lg transition-colors duration-200 cursor-pointer hover:bg-slate-50 active:bg-slate-100;
+            }
+            .clay-panel {
+                @apply bg-surface shadow-sm border border-slate-300 rounded-xl;
+            }
+            /* Context-matching borders for pastel cards */
+            .bg-pastel-blue { @apply border-2 border-blue-200; }
+            .bg-pastel-green { @apply border-2 border-green-200; }
+            .bg-pastel-yellow { @apply border-2 border-yellow-200; }
+            .bg-pastel-red { @apply border-2 border-red-200; }
+        }
+
+        body {
+            @apply bg-bodyBg text-textMain antialiased;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            @apply bg-slate-300 rounded-full hover:bg-slate-400;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex p-6 gap-8 box-border selection:bg-blue-200 selection:text-blue-900">
+
+    <!-- Floating Sidebar -->
+    <aside class="clay-panel w-72 flex-shrink-0 flex flex-col p-6 h-[calc(100vh-3rem)] sticky top-6 z-10">
+        <div class="flex items-center gap-4 mb-10">
+            <div class="w-14 h-14 rounded-full shadow-clay-sm flex items-center justify-center bg-surface">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1v1H9V7zm5 0h1v1h-1V7zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1z"></path></svg>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-2xl leading-tight tracking-tight">SIMBAR</h1>
+                <p class="text-sm text-textMuted font-bold uppercase tracking-widest">Kesbangpol</p>
+            </div>
+        </div>
+
+        <nav class="flex flex-col gap-4 flex-1 mt-4">
+            <button id="nav-dashboard" onclick="switchView('dashboard')"
+                class="clay-btn py-3 px-5 flex items-center gap-3 text-textMain !shadow-clay-pressed !bg-surface/80 w-full text-left">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                Dashboard
+            </button>
+            <button id="nav-master-bmd" onclick="switchView('master-bmd')"
+                class="clay-btn py-3 px-5 flex items-center gap-3 text-textMuted hover:text-textMain w-full text-left">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4">
+                    </path>
+                </svg>
+                Master BMD
+            </button>
+            <button id="nav-manajemen-kir" onclick="switchView('manajemen-kir')"
+                class="clay-btn py-3 px-5 flex items-center gap-3 text-textMuted hover:text-textMain w-full text-left">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                </svg>
+                Manajemen KIR
+            </button>
+            <button id="nav-gudang-transit" onclick="switchView('gudang-transit')"
+                class="clay-btn py-3 px-5 flex items-center gap-3 text-textMuted hover:text-textMain w-full text-left">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                    </path>
+                </svg>
+                Gudang Transit
+            </button>
+            <button id="nav-non-kir" onclick="switchView('non-kir')"
+                class="clay-btn py-3 px-5 flex items-center gap-3 text-textMuted hover:text-textMain w-full text-left">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4">
+                    </path>
+                </svg>
+                Aset Non-KIR
+            </button>
+            <button id="nav-usul-hapus" onclick="switchView('usul-hapus')"
+                class="clay-btn py-3 px-5 flex items-center gap-3 text-textMuted hover:text-textMain w-full text-left">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                    </path>
+                </svg>
+                Usul Penghapusan
+            </button>
+            <button id="nav-laporan" onclick="switchView('laporan')"
+                class="clay-btn py-3 px-5 flex items-center gap-3 text-textMuted hover:text-textMain w-full text-left">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                Laporan & Cetak
+            </button>
+        </nav>
+
+        <div class="mt-auto pt-6 border-t-2 border-slate-300">
+            <div class="flex items-center gap-3 clay-btn py-3 px-4 !shadow-clay-sm">
+                <div class="w-10 h-10 rounded-full shadow-clay-pressed bg-surface flex items-center justify-center">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <p class="font-extrabold text-sm truncate">Admin</p>
+                    <p class="text-xs text-textMuted font-bold truncate">admin@kesbangpol</p>
+                </div>
+                <svg class="w-5 h-5 text-textMuted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                    </path>
+                </svg>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col gap-8 h-[calc(100vh-3rem)] overflow-y-auto pr-2 pb-6 relative z-0">
+
+        <!-- Header -->
+        <header class="clay-panel p-6 px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <h2 id="header-title" class="text-3xl font-black text-textMain tracking-tight">Dashboard Inventaris</h2>
+                <p id="header-desc" class="text-textMuted font-bold mt-1 text-sm">Ringkasan data Barang Milik Daerah
+                    (BMD) dan Kartu Inventaris Ruangan (KIR)</p>
+            </div>
+            <button id="import-btn-header" onclick="openImportModal()"
+                class="clay-btn px-6 py-3.5 flex items-center gap-3 text-blue-700 bg-pastel-blue/30 hidden">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                </svg>
+                Import Excel
+            </button>
+        </header>
+
+        <!-- Supabase Setup Instructions Alert -->
+        <div id="supabase-setup-alert"
+            class="clay-panel p-6 bg-pastel-red/80 border border-red-300 hidden text-red-950">
+            <h3 class="font-extrabold text-lg flex items-center gap-2">âš ï¸ Database Belum Siap (Tabel Tidak Ditemukan)
+            </h3>
+            <p class="text-sm font-bold mt-1">Gagal mengambil data. Pastikan Anda telah membuat tabel `master_bmd` dan
+                relasi di tabel `assets` pada Editor SQL Supabase Anda. Gunakan perintah SQL berikut:</p>
+            <pre
+                class="bg-white/60 p-4 rounded-xl text-xs font-mono overflow-auto mt-3 border border-red-300 max-h-40 selection:bg-red-200">
+-- Salakan copy dan jalankan di Supabase SQL Editor:
+create table public.master_bmd (
+    id bigint generated always as identity primary key,
+    nibar text unique,
+    no_register text,
+    kode_barang text,
+    nama_barang text,
+    spesifikasi_nama text,
+    spesifikasi_lainnya text,
+    merek_tipe text,
+    nomor_polisi text,
+    nomor_rangka text,
+    nomor_bpkb text,
+    jumlah integer,
+    satuan text,
+    harga numeric,
+    nilai numeric,
+    cara_perolehan text,
+    tanggal_perolehan date,
+    status_penggunaan text,
+    keterangan text,
+    status text default 'Aktif',
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create table public.assets (
+    id bigint generated always as identity primary key,
+    master_bmd_id bigint references public.master_bmd(id) on delete set null,
+    no_urut integer,
+    kode_barang text,
+    nama_barang text,
+    merk_model text,
+    no_seri text,
+    ukuran text,
+    bahan text,
+    tahun text,
+    jumlah integer,
+    harga numeric,
+    ruangan text default 'Gudang Transit',
+    kondisi text default 'Baik',
+    keterangan text,
+    status text default 'Aktif',
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create table public.riwayat_barang (
+    id bigint generated always as identity primary key,
+    asset_id bigint references public.assets(id) on delete cascade,
+    jenis_perubahan text,
+    keterangan text,
+    tanggal timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.master_bmd disable row level security;
+alter table public.assets disable row level security;
+alter table public.riwayat_barang disable row level security;
+
+-- Tabel untuk log error import (Sesuai instruksi)
+create table public.import_logs (
+    id bigint generated always as identity primary key,
+    tanggal timestamp with time zone default timezone('utc'::text, now()) not null,
+    jenis_file text,
+    pesan_error text,
+    detail jsonb
+);
+alter table public.import_logs disable row level security;
+
+-- Pastikan User Supabase API memiliki izin INSERT, UPDATE, DELETE (Sesuai instruksi)
+GRANT INSERT, UPDATE, DELETE ON public.master_bmd TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
+            </pre>
+            <div class="mt-4 flex gap-2">
+                <button onclick="document.getElementById('supabase-setup-alert').classList.add('hidden')"
+                    class="clay-btn px-4 py-2 text-xs bg-white/80">Tutup Notifikasi</button>
+            </div>
+        </div>
+
+        <!-- ================= PANEL 1: DASHBOARD ================= -->
+        <div id="dashboard-panel" class="space-y-8 block">
+            <!-- Notification Banner -->
+            <div id="dashboard-notification" class="hidden clay-panel bg-pastel-yellow p-4 border border-yellow-300 shadow-clay-yellow flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <svg class="w-7 h-7 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    <div>
+                        <h4 class="font-black text-yellow-900">Pesan Masuk: Aset Baru dari Master BMD</h4>
+                        <p class="text-sm font-bold text-yellow-800">Ada barang baru dari BMD di Gudang Transit, silakan tentukan penempatan.</p>
+                    </div>
+                </div>
+                <button onclick="switchView('gudang-transit')" class="clay-btn px-4 py-2 bg-yellow-400 text-yellow-900 text-xs font-black !shadow-clay-sm hover:bg-yellow-300">Lihat Gudang</button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+                <!-- Total Aset KIR Card (Pastel Blue) -->
+                <div class="clay-panel bg-pastel-blue p-6 shadow-clay-blue relative overflow-hidden group">
+                    <div
+                        class="absolute -right-6 -top-6 w-32 h-32 bg-white/40 rounded-full blur-2xl group-hover:bg-white/60 transition-all">
+                    </div>
+                    <h3
+                        class="text-pastel-blueDark text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span>
+                        Total Aset KIR
+                    </h3>
+                    <div class="flex items-end justify-between relative z-10">
+                        <p class="text-5xl font-black text-blue-900 tracking-tighter"><span id="total-count">0</span>
+                        </p>
+                        <div
+                            class="w-14 h-14 rounded-full shadow-clay-sm flex items-center justify-center bg-white/50 text-blue-700">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                        </div>
+                    </div>
+                </div>
+ 
+                <!-- Baik Card (Pastel Green) -->
+                <div class="clay-panel bg-pastel-green p-6 shadow-clay-green relative overflow-hidden group">
+                    <div
+                        class="absolute -right-6 -top-6 w-32 h-32 bg-white/40 rounded-full blur-2xl group-hover:bg-white/60 transition-all">
+                    </div>
+                    <h3
+                        class="text-pastel-greenDark text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+                        Kondisi Baik
+                    </h3>
+                    <div class="flex items-end justify-between relative z-10">
+                        <p class="text-5xl font-black text-green-900 tracking-tighter"><span id="good-count">0</span>
+                        </p>
+                        <div
+                            class="w-14 h-14 rounded-full shadow-clay-sm flex items-center justify-center bg-white/50 text-green-700">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+ 
+                <!-- Kurang Baik Card (Pastel Yellow) -->
+                <div class="clay-panel bg-pastel-yellow p-6 shadow-clay-yellow relative overflow-hidden group">
+                    <div
+                        class="absolute -right-6 -top-6 w-32 h-32 bg-white/40 rounded-full blur-2xl group-hover:bg-white/60 transition-all">
+                    </div>
+                    <h3
+                        class="text-yellow-600 text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(234,179,8,0.8)]"></span>
+                        Kurang Baik
+                    </h3>
+                    <div class="flex items-end justify-between relative z-10">
+                        <p class="text-5xl font-black text-yellow-900 tracking-tighter"><span
+                                id="lessgood-count">0</span></p>
+                        <div
+                            class="w-14 h-14 rounded-full shadow-clay-sm flex items-center justify-center bg-white/50 text-yellow-600">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+ 
+                <!-- Rusak Berat Card (Pastel Red) -->
+                <div class="clay-panel bg-pastel-red p-6 shadow-clay-red relative overflow-hidden group">
+                    <div
+                        class="absolute -right-6 -top-6 w-32 h-32 bg-white/40 rounded-full blur-2xl group-hover:bg-white/60 transition-all">
+                    </div>
+                    <h3
+                        class="text-pastel-redDark text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+                        Rusak Berat
+                    </h3>
+                    <div class="flex items-end justify-between relative z-10">
+                        <p class="text-5xl font-black text-red-900 tracking-tighter"><span id="damaged-count">0</span>
+                        </p>
+                        <div
+                            class="w-14 h-14 rounded-full shadow-clay-sm flex items-center justify-center bg-white/50 text-red-700">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity/Riwayat Section -->
+            <div class="clay-panel p-8 flex flex-col mb-2">
+                <h3 class="text-xl font-extrabold tracking-tight mb-4 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Log Riwayat & Aktivitas Mutasi
+                </h3>
+                <div
+                    class="overflow-x-auto rounded-[2rem] shadow-clay-pressed p-5 bg-surface/50 max-h-96 overflow-y-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-xs text-textMuted border-b-2 border-slate-300">
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Tanggal</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Nama Barang</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Jenis Perubahan</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="riwayat-tbody" class="text-sm font-bold text-textMain">
+                            <!-- Dynamic Content -->
+                            <tr>
+                                <td colspan="4" class="text-center py-6 text-textMuted">Belum ada riwayat aktivitas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PANEL 2: MASTER BMD ================= -->
+        <div id="master-bmd-panel" class="clay-panel p-8 flex-1 flex flex-col hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div>
+                    <h3 class="text-xl font-extrabold tracking-tight">Database Induk Master BMD</h3>
+                    <p class="text-xs text-textMuted font-bold mt-1">Daftar seluruh Aset Peralatan & Mesin pada Badan
+                        Kesbangpol Kota Banjarmasin</p>
+                </div>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                    <!-- Dropdown Filter Ruangan -->
+                    <div class="relative">
+                        <select id="filter-bmd-category" onchange="handleFilterBmdCategoryChange()"
+                            class="px-5 py-3 rounded-2xl bg-surface shadow-clay focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold appearance-none w-full md:w-72 cursor-pointer text-sm">
+                            <option value="semua">Semua Kategori</option>
+                            <option value="belum-terpetakan">Belum Terpetakan</option>
+                        </select>
+                    </div>
+
+                    <div class="relative">
+                        <input type="text" id="search-bmd" placeholder="Cari barang, NIBAR, atau kode..."
+                            oninput="handleSearchBmd()"
+                            class="bg-surface shadow-clay-pressed rounded-[1.5rem] py-3 px-5 pl-12 focus:outline-none text-sm w-full md:w-80 text-textMain placeholder-textMuted font-bold">
+                        <svg class="w-5 h-5 absolute left-4 top-3.5 text-textMuted" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-[2rem] shadow-clay-pressed p-5 bg-surface/50 flex-1 flex flex-col">
+                <div class="overflow-x-auto w-full relative">
+                    <table class="w-full text-left border-collapse min-w-[1800px]">
+                        <thead>
+                            <tr class="text-xs text-textMuted border-b-2 border-slate-300 whitespace-nowrap">
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">No</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">NIBAR</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Kode Barang</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Spesifikasi Nama</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Merek/Tipe</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Tgl Perolehan</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Jumlah</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-right">Harga
+                                    Perolehan</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Terpetakan
+                                    (KIR)</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Status Penggunaan</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bmd-tbody" class="text-sm font-bold text-textMain">
+                            <tr>
+                                <td colspan="11" class="text-center py-10 text-textMuted">Data BMD kosong. Silakan
+                                    import file Excel Master BMD.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="bmd-pagination" class="mt-4 flex justify-end items-center gap-2"></div>
+            </div>
+
+            <!-- Floating Bulk Action Panel (Center) -->
+            <div id="bulk-action-bar"
+                class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 opacity-0 scale-95 pointer-events-none w-[90%] max-w-[380px]"
+                style="transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                <div class="pointer-events-auto rounded-3xl shadow-2xl border border-slate-300 p-6 flex flex-col gap-5"
+                    style="background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(240,249,255,0.95) 100%); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);">
+
+                    <!-- Selected count Header -->
+                    <div class="flex items-center gap-4 border-b border-blue-200/50 pb-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center font-black text-lg shadow-clay-blue">
+                            <span id="bulk-count">0</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-black text-blue-900 text-lg">Barang Dipilih</h3>
+                            <p class="text-xs font-bold text-textMuted">Tentukan tujuan aset</p>
+                        </div>
+                        <button onclick="clearBulkSelection()" class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors shrink-0" title="Batal Pilih">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+
+                    <!-- Inputs Container -->
+                    <div class="flex flex-col gap-3">
+                        <!-- Room selector -->
+                        <div>
+                            <label class="text-[10px] font-black uppercase tracking-wider text-blue-700 block mb-1.5 ml-1">Ruangan Tujuan:</label>
+                            <select id="bulk-ruangan"
+                                class="w-full px-4 py-3 rounded-xl bg-white/70 shadow-clay-sm border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold text-sm appearance-none cursor-pointer">
+                                <option value="Ruang Kaban (Kepala Badan)">Ruang Kaban (Kepala Badan)</option>
+                                <option value="Ruang Sekretaris">Ruang Sekretaris</option>
+                                <option value="Ruang Sekretariat">Ruang Sekretariat</option>
+                                <option value="Ruang Kasubbag Keuangan">Ruang Kasubbag Keuangan</option>
+                                <option value="Ruang Kasubbag Umpeg">Ruang Kasubbag Umpeg</option>
+                                <option value="Ruang Kasubbag Sunram">Ruang Kasubbag Sunram</option>
+                                <option value="Ruang Selasar">Ruang Selasar</option>
+                                <option value="Ruang Rapat">Ruang Rapat</option>
+                                <option value="Ruang Pelayanan">Ruang Pelayanan</option>
+                                <option value="Ruang Dapur">Ruang Dapur</option>
+                                <option value="Ruang Kabid Ideologi">Ruang Kabid Ideologi</option>
+                                <option value="Ruang Kabid Hansenibud">Ruang Kabid Hansenibud</option>
+                                <option value="Gudang Transit">Gudang Transit</option>
+                            </select>
+                        </div>
+
+                        <!-- Kondisi selector -->
+                        <div>
+                            <label class="text-[10px] font-black uppercase tracking-wider text-green-700 block mb-1.5 ml-1">Kondisi Barang:</label>
+                            <select id="bulk-kondisi"
+                                class="w-full px-4 py-3 rounded-xl bg-white/70 shadow-clay-sm border border-slate-300 focus:outline-none focus:ring-2 focus:ring-green-400 text-textMain font-bold text-sm appearance-none cursor-pointer">
+                                <option value="Baik">Baik</option>
+                                <option value="Kurang Baik">Kurang Baik</option>
+                                <option value="Rusak Berat">Rusak Berat</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Keterangan input -->
+                        <div>
+                            <label class="text-[10px] font-black uppercase tracking-wider text-purple-700 block mb-1.5 ml-1">Keterangan:</label>
+                            <input type="text" id="bulk-keterangan" placeholder="Keterangan opsional..."
+                                class="w-full px-4 py-3 rounded-xl bg-white/70 shadow-clay-sm border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-400 text-textMain font-bold text-sm placeholder-gray-400">
+                        </div>
+                    </div>
+
+                    <!-- Action button -->
+                    <button onclick="openBulkTransferModal()"
+                        class="w-full clay-btn py-3.5 bg-blue-500 text-white font-extrabold text-sm !shadow-clay-blue hover:bg-blue-600 flex justify-center items-center gap-2 rounded-xl mt-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                        Pindahkan Semua
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PANEL 3: MANAJEMEN KIR ================= -->
+        <div id="manajemen-kir-panel" class="clay-panel p-8 flex-1 flex flex-col hidden">
+            <!-- Header Controls Section -->
+            <div class="flex flex-col xl:flex-row justify-between items-stretch xl:items-end gap-6 mb-8 pb-6 border-b border-slate-300">
+                <!-- Left Side: Room Management -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 flex-1">
+                    <div class="flex-1 max-w-sm">
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Pilih Ruangan</label>
+                        <div class="relative">
+                            <select id="kir-room-select" onchange="loadKirRoomData()"
+                                class="w-full px-5 py-3.5 rounded-2xl bg-surface shadow-clay focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold appearance-none pr-10">
+                                <!-- Options generated dynamically -->
+                            </select>
+                            <!-- Chevron Icon for Select -->
+                            <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none text-textMuted">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="openAddRoomModal()"
+                            class="clay-btn p-3.5 flex items-center justify-center text-blue-700 bg-pastel-blue/30 hover:bg-blue-100"
+                            title="Tambah Ruangan Baru">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                        </button>
+                        <button onclick="deleteRoom()"
+                            class="clay-btn p-3.5 flex items-center justify-center text-red-700 bg-pastel-red/30 hover:bg-red-100"
+                            title="Hapus Ruangan Terpilih">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Side: Search, Filter, Action Buttons -->
+                <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 xl:justify-end">
+                    <!-- Search Input -->
+                    <div class="relative min-w-[240px]">
+                        <input type="text" id="search-kir" placeholder="Cari barang di ruangan..."
+                            oninput="handleSearchKir()"
+                            class="bg-surface shadow-clay-pressed rounded-[1.5rem] py-3.5 px-5 pl-12 focus:outline-none text-sm w-full text-textMain placeholder-textMuted font-bold">
+                        <svg class="w-5 h-5 absolute left-4 top-3.5 text-textMuted" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <!-- Condition Filter -->
+                    <div class="relative">
+                        <select id="filter-kir-kondisi" onchange="handleSearchKir()"
+                            class="bg-surface shadow-clay-pressed rounded-[1.5rem] py-3.5 px-4 pr-10 focus:outline-none text-sm text-textMain font-bold appearance-none">
+                            <option value="semua">Semua Kondisi</option>
+                            <option value="Baik" style="color: #15803d; font-weight: bold;">● Baik</option>
+                            <option value="Kurang Baik" style="color: #b45309; font-weight: bold;">● Kurang Baik</option>
+                            <option value="Rusak Berat" style="color: #b91c1c; font-weight: bold;">● Rusak Berat</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none text-textMuted">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                    <!-- Action Buttons -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="triggerPrintKIR()"
+                            class="clay-btn px-5 py-3.5 flex items-center gap-2 text-green-700 bg-pastel-green/30 font-extrabold text-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            Cetak KIR
+                        </button>
+                        <button onclick="openAddAssetModal()"
+                            class="clay-btn px-5 py-3.5 flex items-center gap-2 text-blue-700 bg-pastel-blue/30 hover:bg-blue-100 font-extrabold text-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Tambah Barang
+                        </button>
+                        <button id="btn-bulk-delete-kir" onclick="deleteSelectedAssets('KIR')"
+                            class="clay-btn px-5 py-3.5 flex items-center gap-2 text-red-700 bg-pastel-red/30 hover:bg-red-100 font-extrabold text-sm hidden">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            Hapus (<span id="bulk-delete-kir-count">0</span>)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Room Info Card -->
+            <div id="kir-room-info-card"
+                class="bg-white/40 p-5 rounded-[1.5rem] border border-slate-300 mb-6 flex flex-col md:flex-row justify-between gap-6 text-sm font-bold">
+                <div>
+                    <p class="text-textMuted text-xs uppercase tracking-wider">Satuan Kerja</p>
+                    <p class="text-textMain text-base font-extrabold">Badan Kesatuan Bangsa dan Politik Kota Banjarmasin
+                    </p>
+                </div>
+                <div>
+                    <p class="text-textMuted text-xs uppercase tracking-wider">Nama Ruangan</p>
+                    <p id="room-info-name" class="text-blue-800 text-base font-black">-</p>
+                </div>
+                <div>
+                    <p class="text-textMuted text-xs uppercase tracking-wider">Mengetahui (Pengguna Barang)</p>
+                    <p class="text-textMain">Ahmad Muzaiyin, S.Sos, M.A</p>
+                    <p class="text-xs text-textMuted">NIP: 19740328 199311 1 001</p>
+                </div>
+                <div>
+                    <p class="text-textMuted text-xs uppercase tracking-wider">Pengurus Barang</p>
+                    <p class="text-textMain">TRISNAWATI M ULYO HAPSARI, SE</p>
+                    <p class="text-xs text-textMuted">NIP: 19721124 200604 2 005</p>
+                </div>
+            </div>
+
+            <div class="rounded-[2rem] shadow-clay-pressed p-5 bg-surface/50 flex-1 flex flex-col">
+                <div class="overflow-x-auto w-full relative">
+                    <table class="w-full text-left border-collapse min-w-[1500px]">
+                        <thead>
+                            <tr class="text-xs text-textMuted border-b border-slate-300 whitespace-nowrap text-center">
+                                <th rowspan="2" class="pb-4 pt-2 px-2 align-middle text-center"><input type="checkbox" id="select-all-kir" onclick="toggleSelectAllKir(this)" class="w-4 h-4 cursor-pointer"></th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle">No. Urut</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle">NIBAR</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle">Kode Barang</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle">Register</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle text-left">Nama/Jenis Barang</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle text-left">Merk/Model</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle">No. Seri Pabrik</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle">Ukuran</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle">Bahan</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle">Tahun</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle">Jumlah</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle text-right">Harga Beli</th>
+                                <th colspan="3" class="pb-2 pt-2 px-4 font-black uppercase tracking-wider border-b border-slate-300">Keadaan Barang</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle text-left">Keterangan</th>
+                                <th rowspan="2" class="pb-4 pt-2 px-4 font-black uppercase tracking-wider align-middle">Aksi</th>
+                            </tr>
+                            <tr class="text-[10px] text-textMuted border-b border-slate-300 whitespace-nowrap text-center">
+                                <th class="pb-2 pt-2 px-2 font-black uppercase tracking-wider border-l border-slate-300">Baik (B)</th>
+                                <th class="pb-2 pt-2 px-2 font-black uppercase tracking-wider border-l border-slate-300">Kurang Baik (KB)</th>
+                                <th class="pb-2 pt-2 px-2 font-black uppercase tracking-wider border-l border-r border-slate-300">Rusak Berat (RB)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="kir-tbody" class="text-sm font-bold text-textMain">
+                            <tr>
+                                <td colspan="17" class="text-center py-10 text-textMuted">Data KIR kosong. Silakan pilih
+                                    ruangan lain atau import file KIR.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PANEL 4: GUDANG TRANSIT ================= -->
+        <div id="gudang-transit-panel" class="clay-panel p-8 flex-1 flex flex-col hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div>
+                    <h3 class="text-xl font-extrabold tracking-tight">Gudang Transit Aset</h3>
+                    <p class="text-xs text-textMuted font-bold mt-1">Daftar seluruh Aset yang saat ini berada di Gudang
+                        Transit (Belum ditempatkan di ruangan KIR resmi)</p>
+                </div>
+                <div class="relative">
+                    <input type="text" id="search-transit" placeholder="Cari barang transit..."
+                        oninput="handleSearchTransit()"
+                        class="bg-surface shadow-clay-pressed rounded-[1.5rem] py-3 px-5 pl-12 focus:outline-none text-sm w-full md:w-80 text-textMain placeholder-textMuted font-bold">
+                    <svg class="w-5 h-5 absolute left-4 top-3 text-textMuted" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="rounded-[2rem] shadow-clay-pressed p-5 bg-surface/50 flex-1 flex flex-col">
+                <div class="overflow-x-auto w-full relative">
+                    <table class="w-full text-left border-collapse min-w-[1500px]">
+                        <thead>
+                            <tr class="text-xs text-textMuted border-b-2 border-slate-300 whitespace-nowrap">
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">No. Urut</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Kode Barang</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Nama/Jenis Barang</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Merk/Model</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">No. Seri Pabrik</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Ukuran</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Bahan</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Tahun</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Jumlah</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-right">Harga Beli
+                                </th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Keadaan</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Status</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transit-tbody" class="text-sm font-bold text-textMain">
+                            <tr>
+                                <td colspan="12" class="text-center py-10 text-textMuted">Gudang transit kosong.</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PANEL 5: ASET NON-KIR ================= -->
+        <div id="non-kir-panel" class="clay-panel p-8 flex-1 flex flex-col hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div>
+                    <h3 class="text-xl font-extrabold tracking-tight">Aset Non-KIR</h3>
+                    <p class="text-xs text-textMuted font-bold mt-1">Daftar seluruh Aset yang ditandai sebagai Non-KIR (Barang cadangan, barang gudang, dll)</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="btn-bulk-delete-nonkir" onclick="deleteSelectedAssets('Non-KIR')"
+                        class="clay-btn px-5 py-3 flex items-center gap-2 text-red-700 bg-pastel-red/30 hover:bg-red-100 hidden">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Hapus Terpilih (<span id="bulk-delete-nonkir-count">0</span>)
+                    </button>
+                    <div class="relative">
+                        <input type="text" id="search-non-kir" placeholder="Cari barang..."
+                            oninput="handleSearchNonKir()"
+                            class="bg-surface shadow-clay-pressed rounded-[1.5rem] py-3 px-5 pl-12 focus:outline-none text-sm w-full md:w-80 text-textMain placeholder-textMuted font-bold">
+                        <svg class="w-5 h-5 absolute left-4 top-3 text-textMuted" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub-navigasi Tabs Aset Non-KIR -->
+            <div class="flex flex-wrap gap-4 mb-6">
+                <button id="tab-non-kir-kendaraan" onclick="switchNonKirTab('kendaraan')" 
+                    class="clay-btn py-2 px-5 text-sm flex items-center gap-2 text-textMuted hover:text-textMain font-bold">
+                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path></svg>
+                    Kendaraan Dinas
+                </button>
+                <button id="tab-non-kir-umum" onclick="switchNonKirTab('umum')" 
+                    class="clay-btn py-2 px-5 text-sm flex items-center gap-2 text-textMuted hover:text-textMain font-bold">
+                    <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    Inventaris Umum & Koridor
+                </button>
+                <button id="tab-non-kir-default" onclick="switchNonKirTab('non-kir')" 
+                    class="clay-btn py-2 px-5 text-sm flex items-center gap-2 text-textMuted hover:text-textMain font-bold">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                    Aset Cadangan (Gudang)
+                </button>
+                <button id="tab-non-kir-search" onclick="switchNonKirTab('search')" 
+                    class="clay-btn py-2 px-5 text-sm flex items-center gap-2 text-textMuted hover:text-textMain font-bold">
+                    <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    Masih Harus Dicari
+                </button>
+                <button id="tab-non-kir-gift" onclick="switchNonKirTab('gift')" 
+                    class="clay-btn py-2 px-5 text-sm flex items-center gap-2 text-textMuted hover:text-textMain font-bold">
+                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
+                    Barang Dihibahkan
+                </button>
+            </div>
+
+            <div class="rounded-[2rem] shadow-clay-pressed p-5 bg-surface/50 flex-1 flex flex-col">
+                <div class="overflow-x-auto w-full relative">
+                    <table class="w-full text-left border-collapse min-w-[1500px]">
+                        <thead>
+                            <tr class="text-xs text-textMuted border-b-2 border-slate-300 whitespace-nowrap">
+                                <th class="pb-4 pt-2 px-2 text-center"><input type="checkbox" id="select-all-nonkir" onclick="toggleSelectAllNonKir(this)" class="w-4 h-4 cursor-pointer"></th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">No. Urut</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Kode Barang</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Nama/Jenis Barang</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Merk/Model</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">No. Seri Pabrik</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Ukuran</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Bahan</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Tahun</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Jumlah</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-right">Harga Beli</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Keadaan</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Status</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="non-kir-tbody" class="text-sm font-bold text-textMain">
+                            <tr>
+                                <td colspan="13" class="text-center py-10 text-textMuted">Tidak ada data aset Non-KIR.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PANEL 6: USUL PENGHAPUSAN ================= -->
+        <div id="usul-hapus-panel" class="clay-panel p-8 flex-1 flex flex-col hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div>
+                    <h3 class="text-xl font-extrabold tracking-tight">Usul Penghapusan</h3>
+                    <p class="text-xs text-textMuted font-bold mt-1">Daftar seluruh Aset yang diusulkan untuk penghapusan</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="btn-bulk-delete-usul-hapus" onclick="deleteSelectedAssets('Usul-Hapus')"
+                        class="clay-btn px-5 py-3 flex items-center gap-2 text-red-700 bg-pastel-red/30 hover:bg-red-100 hidden">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Hapus Terpilih (<span id="bulk-delete-usul-hapus-count">0</span>)
+                    </button>
+                    <div class="relative">
+                        <input type="text" id="search-usul-hapus" placeholder="Cari barang..."
+                            oninput="handleSearchUsulHapus()"
+                            class="bg-surface shadow-clay-pressed rounded-[1.5rem] py-3 px-5 pl-12 focus:outline-none text-sm w-full md:w-80 text-textMain placeholder-textMuted font-bold">
+                        <svg class="w-5 h-5 absolute left-4 top-3 text-textMuted" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-[2rem] shadow-clay-pressed p-5 bg-surface/50 flex-1 flex flex-col">
+                <div class="overflow-x-auto w-full relative">
+                    <table class="w-full text-left border-collapse min-w-[1500px]">
+                        <thead>
+                            <tr class="text-xs text-textMuted border-b-2 border-slate-300 whitespace-nowrap">
+                                <th class="pb-4 pt-2 px-2 text-center"><input type="checkbox" id="select-all-usul-hapus" onclick="toggleSelectAllUsulHapus(this)" class="w-4 h-4 cursor-pointer"></th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">No. Urut</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Kode Barang</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Nama/Jenis Barang</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Merk/Model</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">No. Seri Pabrik</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Ukuran</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Bahan</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Tahun</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Jumlah</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-right">Harga Beli</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Keadaan</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Status</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usul-hapus-tbody" class="text-sm font-bold text-textMain">
+                            <tr>
+                                <td colspan="13" class="text-center py-10 text-textMuted">Tidak ada data usul penghapusan.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PANEL 7: LAPORAN ================= -->
+        <div id="laporan-panel" class="space-y-8 hidden">
+            <!-- Cetak Rekap controls -->
+            <div class="clay-panel p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white/40 p-6 rounded-2xl border border-slate-300 flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-extrabold text-lg mb-2">Cetak Rekap Ruangan</h4>
+                        <p class="text-sm text-textMuted font-bold mb-4">Mencetak rekapitulasi jumlah barang dan total nilai aset berdasarkan pilihan ruangan Anda di tabel rekap.</p>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <button onclick="triggerPrintRekap()"
+                            class="clay-btn w-full py-3.5 bg-pastel-green text-green-900 font-extrabold flex items-center justify-center gap-2 text-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            Print Rekap Seluruh Ruangan
+                        </button>
+                        <button id="btn-print-rekap-selected" onclick="triggerPrintRekapSelected()"
+                            class="clay-btn w-full py-3.5 bg-pastel-blue text-blue-900 font-extrabold flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            Print Rekap Terpilih (<span id="rekap-selected-count">0</span> Ruangan)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white/40 p-6 rounded-2xl border border-slate-300 flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-extrabold text-lg mb-2">Penandatangan Laporan Resmi (BMD)</h4>
+                        <p class="text-sm text-textMuted font-bold">Identitas pejabat yang menyetujui cetakan disamakan
+                            dengan database Master BMD:</p>
+                        <div class="mt-4 p-4 rounded-xl bg-surface/60 border border-slate-300 text-sm">
+                            <p class="text-textMuted font-bold">Pengguna Barang:</p>
+                            <p class="text-textMain font-extrabold text-base">Ahmad Muzaiyin, S.Sos, M.A</p>
+                            <p class="text-textMuted">NIP. 19740328 199311 1 001</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rekapitulasi Table -->
+            <div class="clay-panel p-8 flex flex-col mb-2">
+                <h3 class="text-xl font-extrabold tracking-tight mb-4">Tabel Rekapitulasi Nilai Aset per Ruangan</h3>
+                <div class="overflow-x-auto rounded-[2rem] shadow-clay-pressed p-5 bg-surface/50">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-xs text-textMuted border-b-2 border-slate-300 whitespace-nowrap">
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center w-12">
+                                    <input type="checkbox" id="select-all-rekap" onchange="toggleSelectAllRekap(this)" class="w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500">
+                                </th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">No</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider">Nama Ruangan</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Jumlah Item</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-right">Total Nilai Aset (Rp)</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Baik</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Kurang Baik</th>
+                                <th class="pb-4 pt-2 px-4 font-black uppercase tracking-wider text-center">Rusak Berat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rekap-tbody" class="text-sm font-bold text-textMain">
+                            <!-- Populated dynamically -->
+                            <tr>
+                                <td colspan="7" class="text-center py-6 text-textMuted">Data rekapitulasi belum
+                                    tersedia.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Edit Barang -->
+    <div id="edit-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="clay-panel w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            <button onclick="closeEditModal()"
+                class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+
+            <h2 class="text-2xl font-black text-textMain mb-6 flex items-center gap-3">
+                <span
+                    class="w-10 h-10 rounded-full shadow-clay flex items-center justify-center bg-surface">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                </span>
+                Edit / Mutasi Inventaris
+            </h2>
+
+            <form id="edit-form" class="space-y-5">
+                <input type="hidden" id="edit-id">
+                <input type="hidden" id="old-ruangan">
+                <input type="hidden" id="old-kondisi">
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Nama Barang <span class="text-red-500">*</span></label>
+                        <input type="text" id="edit-nama" required
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Kode Barang</label>
+                        <input type="text" id="edit-kode"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: 02.06.04.01.004">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Register</label>
+                        <input type="text" id="edit-register"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: 001">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Merk / Model</label>
+                        <input type="text" id="edit-merk"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: Zetta / Tiger">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">No. Seri Pabrik</label>
+                        <input type="text" id="edit-no-seri"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: SN123456789">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Ukuran</label>
+                        <input type="text" id="edit-ukuran"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: 120 x 80 cm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Bahan</label>
+                        <input type="text" id="edit-bahan"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: Kayu Jati / Besi">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Tahun Perolehan</label>
+                        <input type="text" id="edit-tahun"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: 2024">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Jumlah</label>
+                        <input type="number" id="edit-jumlah" value="1" min="1" required
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-blue-600 mb-2 ml-2">Harga Beli (Rp)</label>
+                        <input type="number" id="edit-harga" value="0" min="0" required
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-green-600 mb-2 ml-2">Status Kondisi</label>
+                        <select id="edit-kondisi"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-green-400 text-textMain font-bold appearance-none">
+                            <option value="Baik">Baik</option>
+                            <option value="Kurang Baik">Kurang Baik</option>
+                            <option value="Rusak Berat">Rusak Berat</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 border-t border-slate-300 pt-5">
+                    <!-- Mutasi Ruangan -->
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-blue-600 mb-2 ml-2">Pindah
+                            Ruangan (Mutasi)</label>
+                        <select id="edit-ruangan" onchange="handleEditRuanganChange()"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold appearance-none">
+                            <option value="Ruang Kaban (Kepala Badan)">Ruang Kaban (Kepala Badan)</option>
+                            <option value="Ruang Sekretaris">Ruang Sekretaris</option>
+                            <option value="Ruang Sekretariat">Ruang Sekretariat</option>
+                            <option value="Ruang Kasubbag Keuangan">Ruang Kasubbag Keuangan</option>
+                            <option value="Ruang Kasubbag Umpeg">Ruang Kasubbag Umpeg</option>
+                            <option value="Ruang Kasubbag Sunram">Ruang Kasubbag Sunram</option>
+                            <option value="Ruang Selasar">Ruang Selasar</option>
+                            <option value="Ruang Rapat">Ruang Rapat</option>
+                            <option value="Ruang Pelayanan">Ruang Pelayanan</option>
+                            <option value="Ruang Dapur">Ruang Dapur</option>
+                            <option value="Ruang Kabid Ideologi">Ruang Kabid Ideologi</option>
+                            <option value="Ruang Kabid Hansenibud">Ruang Kabid Hansenibud</option>
+                            <option value="Ruang Kabid Politik">Ruang Kabid Politik</option>
+                            <option value="Ruang Kabid Wasnas">Ruang Kabid Wasnas</option>
+                            <option value="Gudang Transit">Gudang Transit</option>
+                            <option value="Kendaraan Dinas" style="background-color: #fee2e2; color: #991b1b; font-weight: bold;">[Spesial] Kendaraan Dinas</option>
+                            <option value="Inventaris Kantor" style="background-color: #e0e7ff; color: #3730a3; font-weight: bold;">[Spesial] Inventaris Umum & Koridor</option>
+                            <option value="Aset Non-KIR" style="background-color: #dbeafe; color: #1e40af; font-weight: bold;">[Spesial] Aset Cadangan (Gudang)</option>
+                            <option value="Masih Harus Dicari" style="background-color: #fef3c7; color: #92400e; font-weight: bold;">[Spesial] Masih Harus Dicari (Pencarian)</option>
+                            <option value="Barang yang Dihibahkan" style="background-color: #dcfce7; color: #166534; font-weight: bold;">[Spesial] Barang yang Dihibahkan (Hibah)</option>
+                            <option value="__DATA_INDUK__" style="background-color: #e9d5ff; color: #6b21a8; font-weight: bold;">[Aksi] Kembalikan ke Data Induk (Master)</option>
+                        </select>
+                        <div id="edit-induk-warning" class="hidden mt-2 p-3 bg-purple-100 rounded-xl border border-purple-300 animate-pulse">
+                            <p class="text-xs font-black text-purple-800 text-center">Barang akan dikembalikan ke Data Induk dan dihapus dari daftar KIR ruangan ini.</p>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <div class="pt-2">
+                    <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Keterangan
+                        Tambahan / Riwayat</label>
+                    <textarea id="edit-keterangan" rows="3"
+                        class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                        placeholder="Contoh: Dipindah karena rusak, sedang dipinjam bidang X..."></textarea>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-4">
+                    <button type="button" onclick="closeEditModal()"
+                        class="clay-btn px-6 py-3 text-textMuted hover:text-textMain !shadow-clay-sm">Batal</button>
+                    <button type="submit"
+                        class="clay-btn px-8 py-3 bg-pastel-blue text-blue-900 !shadow-clay-blue hover:bg-blue-100">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Barang Langsung ke Ruangan -->
+    <div id="add-asset-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="clay-panel w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            <button onclick="closeAddAssetModal()"
+                class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+
+            <h2 class="text-2xl font-black text-textMain mb-6 flex items-center gap-3">
+                <span class="w-10 h-10 rounded-full shadow-clay flex items-center justify-center bg-surface">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                </span>
+                Tambah Barang ke Ruangan
+            </h2>
+
+            <form id="add-asset-form" class="space-y-5">
+                <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-200/50 text-sm font-bold">
+                    <p class="text-textMuted text-xs uppercase tracking-wider">Ruangan Tujuan:</p>
+                    <p id="add-asset-target-room" class="text-blue-900 text-lg font-black">-</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Nama Barang <span class="text-red-500">*</span></label>
+                        <input type="text" id="add-nama" required
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: Meja Rapat Kayu">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Kode Barang</label>
+                        <input type="text" id="add-kode"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: 02.06.04.01.004">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Register</label>
+                        <input type="text" id="add-register"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: 001">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Merk / Model</label>
+                        <input type="text" id="add-merk"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: Zetta / Tiger">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">No. Seri Pabrik</label>
+                        <input type="text" id="add-no-seri"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: SN123456789">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Ukuran</label>
+                        <input type="text" id="add-ukuran"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: 120 x 80 cm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Bahan</label>
+                        <input type="text" id="add-bahan"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: Kayu Jati / Besi">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Tahun Perolehan</label>
+                        <input type="text" id="add-tahun"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                            placeholder="Contoh: 2024">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Jumlah</label>
+                        <input type="number" id="add-jumlah" value="1" min="1" required
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-blue-600 mb-2 ml-2">Harga Beli (Rp)</label>
+                        <input type="number" id="add-harga" value="0" min="0" required
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-green-600 mb-2 ml-2">Status Kondisi</label>
+                        <select id="add-kondisi"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-green-400 text-textMain font-bold appearance-none">
+                            <option value="Baik">Baik</option>
+                            <option value="Kurang Baik">Kurang Baik</option>
+                            <option value="Rusak Berat">Rusak Berat</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Keterangan</label>
+                    <textarea id="add-keterangan" rows="3"
+                        class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                        placeholder="Contoh: Pembelian baru atau mutasi khusus..."></textarea>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-4">
+                    <button type="button" onclick="closeAddAssetModal()"
+                        class="clay-btn px-6 py-3 text-textMuted hover:text-textMain !shadow-clay-sm">Batal</button>
+                    <button type="submit"
+                        class="clay-btn px-8 py-3 bg-pastel-blue text-blue-900 !shadow-clay-blue hover:bg-blue-100 font-extrabold">
+                        Tambah Aset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Ruangan Baru -->
+    <div id="add-room-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="clay-panel w-full max-w-md mx-4 p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            <button onclick="closeAddRoomModal()"
+                class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+
+            <h2 class="text-xl font-black text-textMain mb-6 flex items-center gap-3">
+                <span class="w-10 h-10 rounded-full shadow-clay flex items-center justify-center bg-surface">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1v1H9V7zm5 0h1v1h-1V7zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1z"></path>
+                    </svg>
+                </span>
+                Tambah Ruangan Baru
+            </h2>
+
+            <form id="add-room-form" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Nama Ruangan Baru <span class="text-red-500">*</span></label>
+                    <input type="text" id="add-room-name" required
+                        class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                        placeholder="Contoh: Ruang Kabid Politik / Ruang Arsip">
+                </div>
+
+                <div class="flex justify-end gap-4 pt-4 border-t border-slate-300">
+                    <button type="button" onclick="closeAddRoomModal()"
+                        class="clay-btn px-6 py-3 text-textMuted hover:text-textMain !shadow-clay-sm">Batal</button>
+                    <button type="submit"
+                        class="clay-btn px-8 py-3 bg-pastel-blue text-blue-900 !shadow-clay-blue hover:bg-blue-100 font-extrabold">
+                        Simpan Ruangan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Import Excel -->
+    <div id="import-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="clay-panel w-full max-w-lg mx-4 p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            <button onclick="closeImportModal()"
+                class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+
+            <h2 class="text-2xl font-black text-textMain mb-6 flex items-center gap-3">
+                <span
+                    class="w-10 h-10 rounded-full shadow-clay flex items-center justify-center bg-surface">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                </span>
+                Import Data Excel
+            </h2>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Pilih
+                        Jenis Dokumen</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label
+                            class="clay-btn p-4 flex flex-col items-center justify-center gap-2 cursor-pointer text-center"
+                            id="lbl-type-bmd">
+                            <input type="radio" name="import-type" value="bmd" checked class="hidden"
+                                onchange="toggleImportLabel('bmd')">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1v1H9V7zm5 0h1v1h-1V7zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1z"></path></svg>
+                            <span class="text-sm font-extrabold text-blue-900" id="txt-type-bmd">Master BMD
+                                (2026)</span>
+                        </label>
+                        <label
+                            class="clay-btn p-4 flex flex-col items-center justify-center gap-2 cursor-pointer text-center"
+                            id="lbl-type-kir">
+                            <input type="radio" name="import-type" value="kir" class="hidden"
+                                onchange="toggleImportLabel('kir')">
+                            <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                            <span class="text-sm font-bold text-textMuted" id="txt-type-kir">KIR Ruangan (2025)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div
+                    class="border-2 border-dashed border-slate-300 p-8 rounded-[2rem] flex flex-col items-center justify-center bg-surface/50 text-center relative group">
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls"
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        onchange="handleFileSelect(event)">
+                    <div class="mb-2"><svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg></div>
+                    <p class="font-extrabold text-sm text-textMain" id="file-drag-label">Seret file Excel Anda ke sini
+                        atau klik untuk memilih file</p>
+                    <p class="text-xs text-textMuted mt-1" id="file-name-label">Mendukung format .xlsx dan .xls</p>
+                </div>
+
+                <!-- AI Mapping Config (hanya untuk KIR) -->
+                <div id="ai-mapping-container" class="hidden space-y-4 bg-white/30 p-4 rounded-[1.5rem] border border-slate-300">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="use-gemini-ai" checked class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="font-extrabold text-sm text-textMain">Gunakan Gemini AI untuk Sinkronisasi Lebih Akurat</span>
+                    </label>
+                    <div id="gemini-key-input-wrapper" class="space-y-1">
+                        <label class="block text-[10px] font-black uppercase tracking-wider text-textMuted ml-2">Gemini API Key</label>
+                        <input type="password" id="gemini-api-key" value=""
+                            class="w-full px-4 py-2.5 rounded-xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs font-bold text-textMain"
+                            placeholder="Masukkan API Key Gemini...">
+                    </div>
+                </div>
+
+                <div id="import-progress" class="hidden space-y-2">
+                    <div class="flex justify-between text-xs font-black uppercase tracking-wider text-textMuted">
+                        <span id="import-status-text">Memproses file...</span>
+                        <span id="import-percent">0%</span>
+                    </div>
+                    <div class="w-full bg-surface shadow-clay-pressed rounded-full h-3 overflow-hidden">
+                        <div id="import-progress-bar" class="bg-blue-500 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-4 pt-4">
+                    <button onclick="closeImportModal()"
+                        class="clay-btn px-6 py-3 text-textMuted hover:text-textMain !shadow-clay-sm">Batal</button>
+                    <button id="start-import-btn" onclick="startImportProcess()" disabled
+                        class="clay-btn px-8 py-3 bg-pastel-blue text-blue-900 opacity-50 cursor-not-allowed !shadow-clay-blue hover:bg-blue-100">
+                        Mulai Import
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pemetaan Manual -->
+    <div id="map-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="clay-panel w-full max-w-lg mx-4 p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            <button onclick="closeMapModal()"
+                class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+
+            <h2 class="text-2xl font-black text-textMain mb-6 flex items-center gap-3">
+                <span
+                    class="w-10 h-10 rounded-full shadow-clay flex items-center justify-center bg-surface">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </span>
+                Petakan Aset ke Ruangan
+            </h2>
+
+            <form id="map-form" class="space-y-5">
+                <input type="hidden" id="map-bmd-id">
+
+                <div class="bg-white/40 p-4 rounded-2xl border border-slate-300 text-sm font-bold space-y-2">
+                    <p class="text-textMuted text-xs uppercase tracking-wider">Aset BMD Induk:</p>
+                    <p id="map-bmd-name" class="text-textMain text-base font-extrabold">-</p>
+                    <div class="grid grid-cols-2 text-xs gap-y-1 pt-1">
+                        <p class="text-textMuted">NIBAR: <span id="map-bmd-nibar"
+                                class="text-textMain font-extrabold">-</span></p>
+                        <p class="text-textMuted">Tahun: <span id="map-bmd-year"
+                                class="text-textMain font-extrabold">-</span></p>
+                        <p class="text-textMuted">Jumlah Aset: <span id="map-bmd-qty"
+                                class="text-textMain font-extrabold">-</span></p>
+                        <p class="text-textMuted">Harga Satuan: <span id="map-bmd-price"
+                                class="text-textMain font-extrabold">-</span></p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-blue-600 mb-2 ml-2">Pilih
+                        Ruangan Tujuan</label>
+                    <select id="map-ruangan"
+                        class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold appearance-none">
+                        <option value="Ruang Kaban (Kepala Badan)">Ruang Kaban (Kepala Badan)</option>
+                        <option value="Ruang Sekretaris">Ruang Sekretaris</option>
+                        <option value="Ruang Sekretariat">Ruang Sekretariat</option>
+                        <option value="Ruang Kasubbag Keuangan">Ruang Kasubbag Keuangan</option>
+                        <option value="Ruang Kasubbag Umpeg">Ruang Kasubbag Umpeg</option>
+                        <option value="Ruang Kasubbag Sunram">Ruang Kasubbag Sunram</option>
+                        <option value="Ruang Selasar">Ruang Selasar</option>
+                        <option value="Ruang Rapat">Ruang Rapat</option>
+                        <option value="Ruang Pelayanan">Ruang Pelayanan</option>
+                        <option value="Ruang Dapur">Ruang Dapur</option>
+                        <option value="Ruang Kabid Ideologi">Ruang Kabid Ideologi</option>
+                        <option value="Ruang Kabid Hansenibud">Ruang Kabid Hansenibud</option>
+                        <option value="Gudang Transit">Gudang Transit</option>
+                        <option value="__DATA_INDUK__" style="background-color: #e9d5ff; color: #6b21a8; font-weight: bold;">📦 Kembalikan ke Data Induk (Master)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Jumlah
+                            di Ruangan</label>
+                        <input type="number" id="map-jumlah" min="1" required value="1"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold">
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-black uppercase tracking-wider text-green-600 mb-2 ml-2">Kondisi
+                            Awal</label>
+                        <select id="map-kondisi"
+                            class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-green-400 text-textMain font-bold appearance-none">
+                            <option value="Baik">Baik</option>
+                            <option value="Kurang Baik">Kurang Baik</option>
+                            <option value="Rusak Berat">Rusak Berat</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Keterangan
+                        Tambahan</label>
+                    <textarea id="map-keterangan" rows="2"
+                        class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                        placeholder="Contoh: Ditempatkan di meja sekretaris..."></textarea>
+                </div>
+
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" onclick="closeMapModal()"
+                        class="clay-btn px-6 py-3 text-textMuted hover:text-textMain !shadow-clay-sm">Batal</button>
+                    <button type="submit"
+                        class="clay-btn px-8 py-3 bg-pastel-blue text-blue-900 !shadow-clay-blue hover:bg-blue-100">
+                        Petakan Aset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tentukan Penempatan -->
+    <div id="action-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="clay-panel w-full max-w-md mx-4 p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            <button onclick="closeActionModal()"
+                class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+
+            <h2 class="text-xl font-black text-textMain mb-6 flex items-center gap-3">
+                <span class="w-10 h-10 rounded-full shadow-clay flex items-center justify-center bg-surface">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                </span>
+                Tentukan Penempatan Barang
+            </h2>
+
+            <form id="action-form" class="space-y-5">
+                <input type="hidden" id="action-asset-id">
+                
+                <p class="text-sm font-bold text-textMuted mb-2">Pilih tindakan untuk barang ini:</p>
+
+                <div class="space-y-3">
+                    <label class="clay-btn p-4 flex items-center gap-3 cursor-pointer hover:bg-white/20 transition-colors w-full text-left" id="lbl-action-kir">
+                        <input type="radio" name="transit-action" value="KIR" checked class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500" onchange="toggleActionConfirm()">
+                        <span class="font-extrabold text-blue-900 text-sm">Tempatkan ke Ruangan KIR</span>
+                    </label>
+
+                    <label class="clay-btn p-4 flex items-center gap-3 cursor-pointer hover:bg-white/20 transition-colors w-full text-left" id="lbl-action-nonkir">
+                        <input type="radio" name="transit-action" value="Non-KIR" class="w-4 h-4 text-gray-600 border-gray-300 focus:ring-gray-500" onchange="toggleActionConfirm()">
+                        <span class="font-bold text-gray-700 text-sm">Tetap di Non-KIR</span>
+                    </label>
+
+                    <label class="clay-btn p-4 flex items-center gap-3 cursor-pointer hover:bg-purple-50/30 transition-colors w-full text-left border-2 border-purple-200/50" id="lbl-action-induk">
+                        <input type="radio" name="transit-action" value="Data Induk" class="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500" onchange="toggleActionConfirm()">
+                        <span class="font-bold text-purple-700 text-sm">📦 Kembalikan ke Data Induk (Master)</span>
+                    </label>
+
+                    <label class="clay-btn p-4 flex items-center gap-3 cursor-pointer hover:bg-white/20 transition-colors w-full text-left" id="lbl-action-hapus">
+                        <input type="radio" name="transit-action" value="Hapus" class="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500" onchange="toggleActionConfirm()">
+                        <span class="font-bold text-red-700 text-sm">Usul Penghapusan</span>
+                    </label>
+                </div>
+
+                <div id="action-hapus-confirm" class="hidden mt-4 p-4 bg-pastel-red rounded-xl border border-red-300">
+                    <p class="text-xs font-black text-red-900 text-center">Apakah Anda yakin ingin mengusulkan aset ini untuk penghapusan?</p>
+                </div>
+
+                <div id="action-induk-confirm" class="hidden mt-4 p-4 bg-purple-100 rounded-xl border border-purple-300">
+                    <p class="text-xs font-black text-purple-900 text-center">📦 Barang akan dikembalikan ke Data Induk (Master BMD) dan dihapus dari daftar ruangan/KIR.</p>
+                </div>
+
+                <div class="flex justify-end gap-4 pt-4 border-t border-slate-300">
+                    <button type="button" onclick="closeActionModal()"
+                        class="clay-btn px-6 py-3 text-textMuted hover:text-textMain !shadow-clay-sm">Batal</button>
+                    <button type="submit"
+                        class="clay-btn px-8 py-3 bg-pastel-blue text-blue-900 !shadow-clay-blue hover:bg-blue-100 font-extrabold">
+                        Konfirmasi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Barang -->
+    <div id="delete-confirm-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="clay-panel w-full max-w-md mx-4 p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            <button onclick="closeDeleteConfirmModal()"
+                class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            <h2 class="text-xl font-black text-textMain mb-4 flex items-center gap-3">
+                <span class="w-10 h-10 rounded-full shadow-clay flex items-center justify-center bg-surface text-red-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </span>
+                Hapus / Karantina Barang
+            </h2>
+
+            <div class="mb-4">
+                <p class="text-sm font-bold text-textMain">Barang: <span id="delete-confirm-asset-name" class="font-extrabold text-blue-900"></span></p>
+                <p class="text-xs text-textMuted mt-1">Kode: <span id="delete-confirm-asset-code"></span></p>
+            </div>
+
+            <form id="delete-confirm-form" class="space-y-5">
+                <input type="hidden" id="delete-confirm-asset-id">
+                <input type="hidden" id="delete-confirm-is-bulk">
+                
+                <p class="text-xs font-black uppercase tracking-wider text-textMuted mb-2">Pilih metode penghapusan:</p>
+
+                <div class="space-y-3">
+                    <label class="clay-btn p-4 flex items-center gap-3 cursor-pointer hover:bg-white/20 transition-colors w-full text-left">
+                        <input type="radio" name="delete-method" value="usul-hapus" checked class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <div>
+                            <span class="font-extrabold text-blue-900 text-sm">Pindahkan ke Usul Penghapusan</span>
+                            <p class="text-[10px] text-textMuted mt-0.5">Barang dipindahkan ke daftar usulan penghapusan (karantina) untuk audit pimpinan.</p>
+                        </div>
+                    </label>
+
+                    <label class="clay-btn p-4 flex items-center gap-3 cursor-pointer hover:bg-white/20 transition-colors w-full text-left">
+                        <input type="radio" name="delete-method" value="permanen" class="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500">
+                        <div>
+                            <span class="font-extrabold text-red-700 text-sm">Hapus Permanen dari Database</span>
+                            <p class="text-[10px] text-textMuted mt-0.5">Hapus selamanya. Hanya gunakan jika salah input data, duplikat, atau barang fiktif.</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="flex justify-end gap-4 pt-4 border-t border-slate-300">
+                    <button type="button" onclick="closeDeleteConfirmModal()"
+                        class="clay-btn px-6 py-3 text-textMuted hover:text-textMain !shadow-clay-sm">Batal</button>
+                    <button type="submit"
+                        class="clay-btn px-8 py-3 bg-pastel-blue text-blue-900 !shadow-clay-blue hover:bg-blue-100 font-extrabold">
+                        Eksekusi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Bulk Transfer -->
+    <div id="bulk-transfer-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="clay-panel w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            <button onclick="closeBulkTransferModal()"
+                class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+
+            <h2 class="text-2xl font-black text-textMain mb-6 flex items-center gap-3">
+                <span
+                    class="w-10 h-10 rounded-full shadow-clay flex items-center justify-center bg-surface">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                </span>
+                Konfirmasi Pemindahan Massal
+            </h2>
+
+            <!-- Transfer summary info -->
+            <div class="bg-blue-50/50 p-5 rounded-2xl border border-blue-200/50 mb-5">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-black text-sm">
+                        <span id="bulk-modal-count">0</span>
+                    </span>
+                    <span class="font-extrabold text-blue-900">barang akan dipindahkan ke:</span>
+                </div>
+                <div class="flex items-center gap-2 ml-11">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span id="bulk-modal-room" class="font-black text-blue-800 text-lg">-</span>
+                </div>
+                <div class="flex items-center gap-2 ml-11 mt-1">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-bold text-green-700 text-sm">Kondisi: <span id="bulk-modal-kondisi" class="font-black">-</span></span>
+                </div>
+                <div class="flex items-start gap-2 ml-11 mt-1">
+                    <svg class="w-5 h-5 text-purple-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    <span class="font-bold text-purple-700 text-sm">Keterangan: <span id="bulk-modal-ket" class="font-black text-purple-900">-</span></span>
+                </div>
+            </div>
+
+            <!-- Item list -->
+            <div class="mb-5">
+                <p class="text-xs font-black uppercase tracking-wider text-textMuted mb-3 ml-1">Daftar Barang yang Dipilih:</p>
+                <div id="bulk-modal-list" class="max-h-[300px] overflow-y-auto space-y-2 pr-2 rounded-2xl bg-white/30 p-4 border border-slate-300">
+                    <!-- Items populated by JS -->
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex justify-end gap-4 pt-4 border-t border-slate-300">
+                <button type="button" onclick="closeBulkTransferModal()"
+                    class="clay-btn px-6 py-3 text-textMuted hover:text-textMain !shadow-clay-sm">Batal</button>
+                <button type="button" onclick="executeBulkTransfer()" id="bulk-confirm-btn"
+                    class="clay-btn px-8 py-3 bg-blue-500 text-white font-extrabold !shadow-clay-blue hover:bg-blue-600 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    Ya, Pindahkan Semua
+                </button>
+            </div>
+
+            <!-- Progress overlay -->
+            <div id="bulk-progress-overlay" class="hidden absolute inset-0 bg-white/80 backdrop-blur-sm rounded-[2rem] flex flex-col items-center justify-center z-10">
+                <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                <p class="font-extrabold text-blue-900 text-lg">Memindahkan barang...</p>
+                <p id="bulk-progress-text" class="font-bold text-blue-600 text-sm mt-1">0 / 0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Configurations & Main Entry -->
+    <script src="assets/js/config/supabase.js"></script>
+    <script src="assets/js/main.js"></script>
+    
+    <!-- Utilities -->
+    <script src="assets/js/utils/formatters.js"></script>
+    <script src="assets/js/utils/fuzzy.js"></script>
+    
+    <!-- Components -->
+    <script src="assets/js/components/dashboard.js"></script>
+    <script src="assets/js/components/masterBmd.js"></script>
+    <script src="assets/js/components/kir.js"></script>
+    <script src="assets/js/components/transit.js"></script>
+    <script src="assets/js/components/nonKir.js"></script>
+    <script src="assets/js/components/usulHapus.js"></script>
+    <script src="assets/js/components/rekap.js"></script>
+    <script src="assets/js/components/importExcel.js"></script>
+    <script src="assets/js/components/modals.js"></script>
+</body>
+
+</html>

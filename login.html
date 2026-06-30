@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Admin - SIM‑KIR Kesbangpol</title>
+    
+    <!-- Google Fonts: Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+    <!-- Tailwind Config for Claymorphism -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                    },
+                    colors: {
+                        surface: '#e0e5ec',
+                        textMain: '#2d3748',
+                        textMuted: '#718096',
+                        pastel: {
+                            blue: '#e0f2fe',
+                            blueDark: '#7dd3fc',
+                            green: '#dcfce7',
+                            red: '#fee2e2',
+                        }
+                    },
+                    boxShadow: {
+                        'clay': '8px 8px 16px rgba(163,177,198,0.6), -8px -8px 16px rgba(255,255,255, 0.6), inset 4px 4px 8px rgba(255,255,255,0.8), inset -4px -4px 8px rgba(163,177,198,0.4)',
+                        'clay-sm': '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255, 0.6), inset 2px 2px 4px rgba(255,255,255,0.8), inset -2px -2px 4px rgba(163,177,198,0.4)',
+                        'clay-pressed': 'inset 6px 6px 12px rgba(163,177,198,0.6), inset -6px -6px 12px rgba(255,255,255, 0.6)',
+                        'clay-blue': '8px 8px 16px rgba(163,177,198,0.4), -8px -8px 16px rgba(255,255,255, 0.6), inset 4px 4px 8px rgba(255,255,255,0.8), inset -4px -4px 8px rgba(56,189,248,0.2)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .clay-btn {
+                @apply bg-surface text-textMain font-bold shadow-clay rounded-[2rem] transition-all duration-200 ease-in-out cursor-pointer active:shadow-clay-pressed active:scale-95;
+            }
+            .clay-panel {
+                @apply bg-surface shadow-clay rounded-[2rem];
+            }
+            .clay-input {
+                @apply bg-surface shadow-clay-pressed rounded-[1.5rem] py-3 pr-5 pl-12 focus:outline-none text-textMain placeholder-textMuted font-bold transition-all focus:ring-2 focus:ring-white/50 w-full;
+            }
+        }
+        body {
+            @apply bg-surface text-textMain antialiased overflow-hidden;
+        }
+        
+        /* Floating animations for decorative elements */
+        @keyframes float-slow {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        @keyframes float-fast {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(-5deg); }
+        }
+        .animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
+        .animate-float-fast { animation: float-fast 4s ease-in-out infinite; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen relative selection:bg-blue-200 selection:text-blue-900">
+
+    <!-- Decorative Floating Clay Blobs -->
+    <div class="absolute top-20 left-20 w-32 h-32 bg-pastel-blue rounded-[3rem] shadow-clay-blue animate-float-slow -z-10 opacity-70"></div>
+    <div class="absolute bottom-20 right-20 w-40 h-40 bg-surface rounded-full shadow-clay animate-float-fast -z-10"></div>
+    <div class="absolute top-1/4 right-1/4 w-16 h-16 bg-pastel-green rounded-full shadow-clay-sm animate-float-slow -z-10 opacity-60" style="animation-delay: 1s;"></div>
+    <div class="absolute bottom-1/3 left-1/3 w-20 h-20 bg-pastel-red rounded-[2rem] shadow-clay-sm animate-float-fast -z-10 opacity-50" style="animation-delay: 2s;"></div>
+
+    <div class="w-full max-w-md mx-4 clay-panel p-10 relative z-10">
+        
+        <div class="flex flex-col items-center justify-center mb-8">
+            <div class="w-20 h-20 rounded-[2rem] shadow-clay flex items-center justify-center bg-surface text-4xl mb-4">
+                🏛️
+            </div>
+            <h2 class="text-3xl font-black text-textMain tracking-tight">SIM-KIR</h2>
+            <p class="text-sm text-textMuted font-bold uppercase tracking-widest mt-1">Admin Kesbangpol</p>
+        </div>
+
+        <form id="login-form" class="space-y-6">
+            <div>
+                <label class="block text-sm font-extrabold mb-2 ml-2 text-textMain" for="email">Email</label>
+                <div class="relative">
+                    <input type="email" id="email" required class="clay-input" placeholder="admin@kesbangpol.id" />
+                    <svg class="w-5 h-5 absolute left-4 top-3.5 text-textMuted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path></svg>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-extrabold mb-2 ml-2 text-textMain" for="password">Password</label>
+                <div class="relative">
+                    <input type="password" id="password" required class="clay-input" placeholder="••••••••" />
+                    <svg class="w-5 h-5 absolute left-4 top-3.5 text-textMuted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+            </div>
+
+            <button type="submit" class="clay-btn w-full py-4 mt-4 bg-pastel-blue text-blue-900 !shadow-clay-blue text-lg tracking-wide hover:bg-blue-100 flex items-center justify-center gap-2">
+                Masuk
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+        </form>
+        
+        <div id="error-msg" class="mt-6 text-center text-red-600 font-bold text-sm hidden bg-red-100/50 py-3 rounded-2xl shadow-clay-pressed border border-red-200">
+            <!-- Error message will appear here -->
+        </div>
+    </div>
+
+    <script src="assets/js/auth.js"></script>
+</body>
+</html>
