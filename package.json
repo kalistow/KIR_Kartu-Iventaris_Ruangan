@@ -4,7 +4,8 @@
   "description": "Sistem Informasi Kartu Inventaris Ruangan",
   "main": "index.html",
   "scripts": {
-    "dev": "serve ."
+    "dev": "serve .",
+    "build": "echo \"const ENV = { SUPABASE_URL: '${SUPABASE_URL}', SUPABASE_ANON_KEY: '${SUPABASE_ANON_KEY}', GEMINI_API_KEY: '${GEMINI_API_KEY}' };\" > assets/js/config/env.js"
   },
   "devDependencies": {
     "serve": "^14.2.1"
