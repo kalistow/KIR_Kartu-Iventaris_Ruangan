@@ -5,8 +5,8 @@ function renderKirTable(assets) {
     if (!tbody) return;
     tbody.innerHTML = '';
     
-    // Filter by selected room and exclude Gudang Transit
-    const roomFiltered = assets.filter(a => a.ruangan === selectedRoom && a.ruangan !== 'Gudang Transit');
+    // Filter by selected room
+    const roomFiltered = assets.filter(a => a.ruangan === selectedRoom && a.ruangan !== 'Belum Terpetakan');
     
     // Clear selection of IDs that are no longer in this filtered list
     const roomFilteredIds = roomFiltered.map(a => a.id);
@@ -64,13 +64,15 @@ function renderKirTable(assets) {
         
         const isSelected = selectedKirAssetIds.has(a.id);
         
+        const usulBadge = a.status === 'Usul Penghapusan' ? `<br><span class="inline-block mt-1 bg-red-100 text-red-800 text-[10px] font-black px-2 py-0.5 rounded border border-red-300">Usul Hapus</span>` : '';
+        
         tr.innerHTML = `
             <td class="py-4 px-2 text-center"><input type="checkbox" class="kir-checkbox w-4 h-4 cursor-pointer" value="${a.id}" ${isSelected ? 'checked' : ''} onchange="updateKirSelection()"></td>
             <td class="py-4 px-4 whitespace-nowrap">${index + 1}</td>
             <td class="py-4 px-4 whitespace-nowrap text-xs text-blue-700 font-mono">${nibar}</td>
             <td class="py-4 px-4 whitespace-nowrap">${displayKode}</td>
             <td class="py-4 px-4 whitespace-nowrap">${displayReg}</td>
-            <td class="py-4 px-4 font-extrabold text-gray-900 text-left">${a.nama_barang || '-'}</td>
+            <td class="py-4 px-4 font-extrabold text-gray-900 text-left">${a.nama_barang || '-'}${usulBadge}</td>
             <td class="py-4 px-4 text-textMuted text-left">${a.merk_model || '-'}</td>
             <td class="py-4 px-4">${a.no_seri || '-'}</td>
             <td class="py-4 px-4">${a.ukuran || '-'}</td>

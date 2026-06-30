@@ -29,7 +29,20 @@ window.openEditModal = function(id) {
     document.getElementById('old-ruangan').value = asset.ruangan || '';
     document.getElementById('old-kondisi').value = asset.kondisi || '';
     
-    document.getElementById('edit-ruangan').value = asset.ruangan || 'Ruang Kaban (Kepala Badan)';
+    const editRuanganSelect = document.getElementById('edit-ruangan');
+    editRuanganSelect.value = asset.ruangan || 'Ruang Kaban (Kepala Badan)';
+    
+    // Disable room change if in Usul Penghapusan
+    const warningDiv = document.getElementById('edit-usul-hapus-warning');
+    if (asset.status === 'Usul Penghapusan') {
+        editRuanganSelect.disabled = true;
+        editRuanganSelect.classList.add('bg-gray-100', 'cursor-not-allowed', 'opacity-70');
+        if (warningDiv) warningDiv.classList.remove('hidden');
+    } else {
+        editRuanganSelect.disabled = false;
+        editRuanganSelect.classList.remove('bg-gray-100', 'cursor-not-allowed', 'opacity-70');
+        if (warningDiv) warningDiv.classList.add('hidden');
+    }
     document.getElementById('edit-kondisi').value = asset.kondisi || 'Baik';
     document.getElementById('edit-keterangan').value = asset.keterangan || '';
     
@@ -113,21 +126,21 @@ window.deleteRoom = function() {
     
     const roomToDelete = selectFilter.value;
     if (!roomToDelete) {
-        alert('Tidak ada ruangan terpilih untuk dihapus.');
+        showToast('Tidak ada ruangan terpilih untuk dihapus.', 'warning');
         return;
     }
     
     // Safety check: check if room is special
-    const specialRooms = ['Gudang Transit', 'Aset Non-KIR', 'Masih Harus Dicari', 'Barang yang Dihibahkan', 'Kendaraan Dinas', 'Inventaris Kantor'];
+    const specialRooms = ['Aset Non-KIR', 'Masih Harus Dicari', 'Barang yang Dihibahkan', 'Kendaraan Dinas', 'Inventaris Kantor'];
     if (specialRooms.includes(roomToDelete)) {
-        alert(`Ruangan khusus "${roomToDelete}" tidak dapat dihapus.`);
+        showToast(`Ruangan khusus "${roomToDelete}" tidak dapat dihapus.`, 'error');
         return;
     }
     
     // Safety check: check if the room contains assets
     const assetsInRoom = globalAssets.filter(a => a.ruangan === roomToDelete);
     if (assetsInRoom.length > 0) {
-        alert(`Ruangan "${roomToDelete}" tidak dapat dihapus karena masih berisi ${assetsInRoom.length} barang terdaftar di dalamnya.\n\nSilakan pindahkan semua barang di ruangan ini ke ruangan lain terlebih dahulu.`);
+        showToast(`Ruangan "${roomToDelete}" tidak dapat dihapus karena masih berisi ${assetsInRoom.length} barang terdaftar di dalamnya. Silakan pindahkan semua barang di ruangan ini ke ruangan lain terlebih dahulu.`, 'warning');
         return;
     }
     
@@ -159,13 +172,13 @@ window.deleteRoom = function() {
     // Refresh table
     renderKirTable(globalAssets);
     
-    alert(`Ruangan "${roomToDelete}" berhasil dihapus.`);
+    showToast(`Ruangan "${roomToDelete}" berhasil dihapus.`, 'success');
 };
 
 window.deleteSingleAsset = function(id) {
     const asset = globalAssets.find(a => a.id === id);
     if (!asset) {
-        alert('Barang tidak ditemukan!');
+        showToast('Barang tidak ditemukan!', 'error');
         return;
     }
     
@@ -219,6 +232,68 @@ window.deleteSelectedAssets = function(type) {
     }
 };
 
+window.openExecuteHapusModal = function(id) {
+    const asset = globalAssets.find(a => a.id === id);
+    if (!asset) {
+        showToast('Barang tidak ditemukan!', 'error');
+        return;
+    }
+    
+    document.getElementById('execute-hapus-asset-id').value = id;
+    document.getElementById('execute-hapus-is-bulk').value = "false";
+    document.getElementById('execute-hapus-asset-name').textContent = asset.nama_barang || 'Aset';
+    document.getElementById('execute-hapus-asset-code').textContent = asset.kode_barang || '-';
+    
+    const radios = document.getElementsByName('execute-hapus-method');
+    if (radios.length > 0) radios[0].checked = true;
+    
+    const modal = document.getElementById('execute-hapus-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('.clay-panel').classList.remove('scale-95');
+        }, 10);
+    }
+};
+
+window.executeHapusSelectedAssets = function(type) {
+    let idsToDelete = [];
+    if (type === 'Usul-Hapus') {
+        idsToDelete = Array.from(selectedUsulHapusAssetIds);
+    }
+    
+    if (idsToDelete.length === 0) return;
+    
+    document.getElementById('execute-hapus-asset-id').value = JSON.stringify(idsToDelete);
+    document.getElementById('execute-hapus-is-bulk').value = "true";
+    document.getElementById('execute-hapus-asset-name').textContent = `${idsToDelete.length} barang terpilih`;
+    document.getElementById('execute-hapus-asset-code').textContent = `Eksekusi Massal`;
+    
+    const radios = document.getElementsByName('execute-hapus-method');
+    if (radios.length > 0) radios[0].checked = true;
+    
+    const modal = document.getElementById('execute-hapus-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('.clay-panel').classList.remove('scale-95');
+        }, 10);
+    }
+};
+
+window.closeExecuteHapusModal = function() {
+    const modal = document.getElementById('execute-hapus-modal');
+    if (modal) {
+        modal.classList.add('opacity-0');
+        modal.querySelector('.clay-panel').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+};
+
 window.openMapModal = function(id) {
     const item = globalMasterBmd.find(b => b.id === id);
     if (!item) return;
@@ -256,7 +331,7 @@ window.closeMapModal = function() {
 async function returnToDataInduk(assetId) {
     const asset = globalAssets.find(a => a.id === assetId);
     if (!asset) {
-        alert('Aset tidak ditemukan!');
+        showToast('Aset tidak ditemukan!', 'error');
         return;
     }
     
@@ -280,10 +355,10 @@ async function returnToDataInduk(assetId) {
         const { error } = await supabaseClient.from('assets').delete().eq('id', assetId);
         if (error) throw error;
         
-        loadAllData();
+        await loadAllData();
     } catch (err) {
         console.error('Error returning to Data Induk:', err);
-        alert('Gagal mengembalikan ke Data Induk: ' + err.message);
+        showToast('Gagal mengembalikan ke Data Induk: ' + err.message, 'error');
     }
 }
 
@@ -356,18 +431,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (error) throw error;
                 
+                const oldAsset = globalAssets.find(a => a.id == id);
+                let ketText = 'Data barang diubah melalui form edit.';
+                if (oldAsset) {
+                    let changes = [];
+                    if (oldAsset.ruangan !== ruangan) changes.push(`Ruangan: ${oldAsset.ruangan || '-'} ➔ ${ruangan}`);
+                    if (oldAsset.kondisi !== kondisi) changes.push(`Kondisi: ${oldAsset.kondisi || '-'} ➔ ${kondisi}`);
+                    if (oldAsset.nama_barang !== nama) changes.push(`Nama: ${oldAsset.nama_barang || '-'} ➔ ${nama}`);
+                    if (changes.length > 0) ketText = 'Perubahan: ' + changes.join(', ');
+                }
+
                 await supabaseClient.from('riwayat_barang').insert([{
                     asset_id: id,
                     jenis_perubahan: 'Edit Data',
-                    keterangan: 'Data barang diubah melalui form edit.',
+                    keterangan: ketText,
                     tanggal: new Date().toISOString()
                 }]);
 
                 if (typeof closeEditModal !== 'undefined') closeEditModal();
-                if (typeof loadAllData !== 'undefined') loadAllData();
+                if (typeof loadAllData !== 'undefined') await loadAllData();
+                showToast('Aset berhasil diperbarui.', 'success');
             } catch (err) {
                 console.error('Update Error:', err);
-                alert('Gagal mengupdate aset: ' + err.message);
+                showToast('Gagal mengupdate aset: ' + err.message, 'error');
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -397,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const kondisi = document.getElementById('add-kondisi').value;
             const ket = document.getElementById('add-keterangan').value;
 
-            const selectedRoom = (typeof currentKirRoom !== 'undefined' && currentKirRoom) ? currentKirRoom : "Gudang Transit";
+            const selectedRoom = (typeof currentKirRoom !== 'undefined' && currentKirRoom) ? currentKirRoom : "Belum Terpetakan";
 
             try {
                 const { data, error } = await supabaseClient.from('assets').insert([{
@@ -427,10 +513,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 if (typeof closeAddAssetModal !== 'undefined') closeAddAssetModal();
-                if (typeof loadAllData !== 'undefined') loadAllData();
+                if (typeof loadAllData !== 'undefined') await loadAllData();
+                showToast('Aset baru berhasil ditambahkan.', 'success');
             } catch (err) {
                 console.error('Insert Error:', err);
-                alert('Gagal menambahkan aset: ' + err.message);
+                showToast('Gagal menambahkan aset: ' + err.message, 'error');
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -476,6 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const kirSelect = document.getElementById('kir-room-select');
             if (kirSelect) kirSelect.value = name;
             if (typeof loadKirRoomData !== 'undefined') loadKirRoomData();
+            showToast(`Ruangan "${name}" berhasil ditambahkan.`, 'success');
         });
     }
 
@@ -501,16 +589,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (error) throw error;
                 } else if (method === 'usul-hapus') {
                     const { error } = await supabaseClient.from('assets').update({
-                        status: 'Usul Hapus'
+                        status: 'Usul Penghapusan'
                     }).in('id', ids);
                     if (error) throw error;
                     
-                    const history = ids.map(id => ({
-                        asset_id: id,
-                        jenis_perubahan: 'Masuk Usul Penghapusan',
-                        keterangan: 'Barang dipindahkan ke daftar karantina usul hapus.',
-                        tanggal: new Date().toISOString()
-                    }));
+                    const history = ids.map(id => {
+                        const asset = globalAssets.find(a => a.id == id);
+                        const origin = asset && asset.ruangan ? asset.ruangan : 'ruangan sebelumnya';
+                        return {
+                            asset_id: id,
+                            jenis_perubahan: 'Masuk Usul Penghapusan',
+                            keterangan: `Dari ruangan "${origin}" dipindahkan ke Usul Penghapusan.`,
+                            tanggal: new Date().toISOString()
+                        };
+                    });
                     await supabaseClient.from('riwayat_barang').insert(history);
                 }
                 
@@ -519,10 +611,66 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof selectedUsulHapusAssetIds !== 'undefined') selectedUsulHapusAssetIds.clear();
                 
                 if (typeof closeDeleteConfirmModal !== 'undefined') closeDeleteConfirmModal();
-                if (typeof loadAllData !== 'undefined') loadAllData();
+                if (typeof loadAllData !== 'undefined') await loadAllData();
+                showToast('Aset berhasil dieksekusi.', 'success');
             } catch (err) {
                 console.error('Delete Error:', err);
-                alert('Gagal mengeksekusi penghapusan: ' + err.message);
+                showToast('Gagal mengeksekusi penghapusan: ' + err.message, 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+    }
+
+    // 4b. Execute Hapus Form Submit
+    const executeHapusForm = document.getElementById('execute-hapus-form');
+    if (executeHapusForm) {
+        executeHapusForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Mengeksekusi...';
+            btn.disabled = true;
+
+            const idVal = document.getElementById('execute-hapus-asset-id').value;
+            const isBulk = document.getElementById('execute-hapus-is-bulk').value === 'true';
+            const method = document.querySelector('input[name="execute-hapus-method"]:checked').value;
+            
+            let ids = isBulk ? JSON.parse(idVal) : [parseInt(idVal)];
+
+            try {
+                if (method === 'permanen') {
+                    const { error } = await supabaseClient.from('assets').delete().in('id', ids);
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabaseClient.from('assets').update({
+                        status: method
+                    }).in('id', ids);
+                    if (error) throw error;
+                    
+                    const history = ids.map(id => {
+                        const asset = globalAssets.find(a => a.id == id);
+                        return {
+                            asset_id: id,
+                            jenis_perubahan: `Dieksekusi: ${method}`,
+                            keterangan: `Barang telah ${method.toLowerCase()}.`,
+                            tanggal: new Date().toISOString()
+                        };
+                    });
+                    await supabaseClient.from('riwayat_barang').insert(history);
+                }
+                
+                if (typeof selectedKirAssetIds !== 'undefined') selectedKirAssetIds.clear();
+                if (typeof selectedNonKirAssetIds !== 'undefined') selectedNonKirAssetIds.clear();
+                if (typeof selectedUsulHapusAssetIds !== 'undefined') selectedUsulHapusAssetIds.clear();
+                
+                if (typeof closeExecuteHapusModal !== 'undefined') closeExecuteHapusModal();
+                if (typeof loadAllData !== 'undefined') await loadAllData();
+                showToast('Aset berhasil dieksekusi.', 'success');
+            } catch (err) {
+                console.error('Execute Error:', err);
+                showToast('Gagal mengeksekusi penghapusan: ' + err.message, 'error');
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -548,7 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const bmdItem = globalMasterBmd.find(b => b.id == bmdId);
             if (!bmdItem) {
-                alert('Item BMD tidak ditemukan!');
+                showToast('Item BMD tidak ditemukan!', 'error');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
                 return;
@@ -562,8 +710,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     status = 'Masih Harus Dicari';
                 } else if (targetRoom === 'Barang yang Dihibahkan') {
                     status = 'Dihibahkan';
-                } else if (targetRoom === 'Gudang Transit') {
-                    status = 'Pesan Masuk';
+                } else if (targetRoom === 'Belum Terpetakan') {
+                    status = 'Belum Terpetakan';
                 }
 
                 const payload = {
@@ -597,10 +745,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 closeMapModal();
-                loadAllData();
+                await loadAllData();
+                showToast(`Barang berhasil dipetakan ke ${targetRoom}.`, 'success');
             } catch (err) {
                 console.error('Map Error:', err);
-                alert('Gagal memetakan barang: ' + err.message);
+                showToast('Gagal memetakan barang: ' + err.message, 'error');
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;

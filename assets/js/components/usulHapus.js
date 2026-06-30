@@ -54,9 +54,13 @@ function renderUsulHapusTable(assets) {
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                     Edit
                 </button>
-                <button onclick="deleteSingleAsset(${a.id})" class="clay-btn px-4 py-2 flex items-center justify-center gap-2 w-full !shadow-clay-sm text-red-700 hover:text-red-900 font-extrabold text-xs">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    Hapus
+                <button onclick="cancelUsulHapus(${a.id})" class="clay-btn px-4 py-2 flex items-center justify-center gap-2 w-full !shadow-clay-sm text-gray-700 hover:text-gray-950 font-extrabold text-xs mb-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Batal
+                </button>
+                <button onclick="openExecuteHapusModal(${a.id})" class="clay-btn px-4 py-2 flex items-center justify-center gap-2 w-full !shadow-clay-sm text-orange-700 hover:text-orange-900 font-extrabold text-xs">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    Eksekusi
                 </button>
             </td>
         `;
@@ -111,13 +115,16 @@ window.updateUsulHapusSelection = function() {
 window.updateUsulHapusBulkButton = function() {
     const btn = document.getElementById('btn-bulk-delete-usul-hapus');
     const countSpan = document.getElementById('bulk-delete-usul-hapus-count');
+    const btnCancel = document.getElementById('btn-bulk-cancel-usul-hapus');
     if (btn && countSpan) {
         const count = selectedUsulHapusAssetIds.size;
         countSpan.textContent = count;
         if (count > 0) {
             btn.classList.remove('hidden');
+            if(btnCancel) btnCancel.classList.remove('hidden');
         } else {
             btn.classList.add('hidden');
+            if(btnCancel) btnCancel.classList.add('hidden');
         }
     }
     
@@ -134,3 +141,63 @@ window.updateUsulHapusBulkButton = function() {
         masterCheck.checked = false;
     }
 };
+
+window.cancelUsulHapus = async function(id) {
+    if (!confirm('Batalkan usul penghapusan untuk barang ini?')) return;
+    await processCancelUsulHapus([id]);
+};
+
+window.cancelBulkUsulHapus = async function() {
+    if (selectedUsulHapusAssetIds.size === 0) return;
+    if (!confirm(`Batalkan usul penghapusan untuk ${selectedUsulHapusAssetIds.size} barang terpilih?`)) return;
+    await processCancelUsulHapus(Array.from(selectedUsulHapusAssetIds));
+};
+
+async function processCancelUsulHapus(ids) {
+    try {
+        // Prepare bulk update based on each asset's original room
+        const assetsToUpdate = globalAssets.filter(a => ids.includes(a.id));
+        
+        // Group by new status
+        const updatesByStatus = {};
+        for (let asset of assetsToUpdate) {
+            let newStatus = 'KIR';
+            if (['Aset Non-KIR', 'Kendaraan Dinas', 'Inventaris Kantor', 'Depan Bidang'].includes(asset.ruangan)) {
+                newStatus = 'Non-KIR';
+            } else if (asset.ruangan === 'Masih Harus Dicari') {
+                newStatus = 'Masih Harus Dicari';
+            } else if (asset.ruangan === 'Barang yang Dihibahkan') {
+                newStatus = 'Dihibahkan';
+            } else if (asset.ruangan === 'Belum Terpetakan') {
+                newStatus = 'Belum Terpetakan';
+            }
+            
+            if (!updatesByStatus[newStatus]) updatesByStatus[newStatus] = [];
+            updatesByStatus[newStatus].push(asset.id);
+        }
+        
+        // Execute updates
+        for (let status in updatesByStatus) {
+            const { error } = await supabaseClient.from('assets').update({ status: status }).in('id', updatesByStatus[status]);
+            if (error) throw error;
+        }
+        
+        // Insert history
+        const history = ids.map(id => {
+            return {
+                asset_id: id,
+                jenis_perubahan: 'Batal Usul Penghapusan',
+                keterangan: 'Membatalkan usul penghapusan dan mengembalikan status ke kondisi semula.',
+                tanggal: new Date().toISOString()
+            };
+        });
+        await supabaseClient.from('riwayat_barang').insert(history);
+        
+        selectedUsulHapusAssetIds.clear();
+        await loadAllData();
+        showToast('Berhasil membatalkan usulan penghapusan.', 'success');
+    } catch (err) {
+        console.error('Cancel Usul Hapus Error:', err);
+        showToast('Gagal membatalkan usulan: ' + err.message, 'error');
+    }
+}

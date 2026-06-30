@@ -7,13 +7,13 @@ function renderRekapTable(assets) {
     
     // Group assets by room
     const rekapMap = {};
-    const rooms = [...getActiveRooms(), "Gudang Transit"];
+    const rooms = [...getActiveRooms()];
     rooms.forEach(room => {
         rekapMap[room] = { qty: 0, price: 0, baik: 0, kurang: 0, rusak: 0 };
     });
     
     assets.forEach(a => {
-        const room = a.ruangan || 'Gudang Transit';
+        const room = a.ruangan || 'Belum Terpetakan';
         if (!rekapMap[room]) {
             rekapMap[room] = { qty: 0, price: 0, baik: 0, kurang: 0, rusak: 0 };
         }
@@ -82,7 +82,7 @@ window.toggleRoomRekap = function(checkbox, roomName) {
 };
 
 window.toggleSelectAllRekap = function(masterCheckbox) {
-    const rooms = [...getActiveRooms(), "Gudang Transit"];
+    const rooms = [...getActiveRooms()];
     if (masterCheckbox.checked) {
         rooms.forEach(r => selectedRekapRooms.add(r));
     } else {
@@ -101,20 +101,33 @@ window.toggleSelectAllRekap = function(masterCheckbox) {
 };
 
 window.updateRekapButtonsState = function() {
-    const btn = document.getElementById('btn-print-rekap-selected');
+    const btnPrint = document.getElementById('btn-print-rekap-selected');
+    const btnExcel = document.getElementById('btn-excel-rekap-selected');
     const countEl = document.getElementById('rekap-selected-count');
+    const countExcelEl = document.getElementById('rekap-selected-count-excel');
     const masterCheck = document.getElementById('select-all-rekap');
     
-    const activeRoomsCount = [...getActiveRooms(), "Gudang Transit"].length;
+    const activeRoomsCount = [...getActiveRooms()].length;
     
     if (countEl) countEl.textContent = selectedRekapRooms.size;
-    if (btn) {
+    if (countExcelEl) countExcelEl.textContent = selectedRekapRooms.size;
+    
+    if (btnPrint) {
         if (selectedRekapRooms.size === 0) {
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btnPrint.disabled = true;
+            btnPrint.classList.add('opacity-50', 'cursor-not-allowed');
         } else {
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btnPrint.disabled = false;
+            btnPrint.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+    if (btnExcel) {
+        if (selectedRekapRooms.size === 0) {
+            btnExcel.disabled = true;
+            btnExcel.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+            btnExcel.disabled = false;
+            btnExcel.classList.remove('opacity-50', 'cursor-not-allowed');
         }
     }
     
@@ -142,7 +155,7 @@ window.triggerPrintRekap = function() {
     });
     
     globalAssets.forEach(a => {
-        const room = a.ruangan || 'Gudang Transit';
+        const room = a.ruangan || 'Belum Terpetakan';
         if (!rekapMap[room]) rekapMap[room] = { qty: 0, price: 0, baik: 0, kurang: 0, rusak: 0 };
         const qty = a.jumlah || 1;
         rekapMap[room].qty += qty;
@@ -251,7 +264,7 @@ window.triggerPrintRekap = function() {
 
 window.triggerPrintRekapSelected = function() {
     if (selectedRekapRooms.size === 0) {
-        alert('Silakan pilih minimal satu ruangan untuk dicetak!');
+        showToast('Silakan pilih minimal satu ruangan untuk dicetak!', 'warning');
         return;
     }
     
@@ -265,7 +278,7 @@ window.triggerPrintRekapSelected = function() {
     });
     
     globalAssets.forEach(a => {
-        const room = a.ruangan || 'Gudang Transit';
+        const room = a.ruangan || 'Belum Terpetakan';
         if (rekapMap[room]) { // Only sum for selected rooms!
             const qty = a.jumlah || 1;
             rekapMap[room].qty += qty;
@@ -424,19 +437,19 @@ window.triggerPrintKIR = function() {
       <table class="data-table">
         <thead>
           <tr>
-            <th rowspan="2">No. Urut</th>
-            <th rowspan="2">NIBAR</th>
-            <th rowspan="2">Kode Barang</th>
-            <th rowspan="2">Nama/Jenis Barang</th>
-            <th rowspan="2">Merk/Model</th>
-            <th rowspan="2">No. Seri Pabrik</th>
-            <th rowspan="2">Ukuran</th>
-            <th rowspan="2">Bahan</th>
-            <th rowspan="2">Tahun</th>
-            <th rowspan="2">Jml</th>
-            <th rowspan="2">Harga (Rp)</th>
-            <th colspan="3">Keadaan Barang</th>
-            <th rowspan="2">Keterangan</th>
+            <th rowspan="2" style="width: 3%;">No. Urut</th>
+            <th rowspan="2" style="width: 10%;">NIBAR</th>
+            <th rowspan="2" style="width: 8%;">Kode Barang</th>
+            <th rowspan="2" style="width: 13%;">Nama/Jenis Barang</th>
+            <th rowspan="2" style="width: 12%;">Merk/Model</th>
+            <th rowspan="2" style="width: 6%;">No. Seri Pabrik</th>
+            <th rowspan="2" style="width: 5%;">Ukuran</th>
+            <th rowspan="2" style="width: 6%;">Bahan</th>
+            <th rowspan="2" style="width: 4%;">Tahun</th>
+            <th rowspan="2" style="width: 3%;">Jml</th>
+            <th rowspan="2" style="width: 8%;">Harga (Rp)</th>
+            <th colspan="3" style="width: 9%;">Keadaan Barang</th>
+            <th rowspan="2" style="width: 13%;">Keterangan</th>
           </tr>
           <tr>
             <th>B</th>
@@ -504,4 +517,136 @@ window.triggerPrintKIR = function() {
     </html>
     `);
     printWindow.document.close();
+};
+
+window.exportRekapExcel = function() {
+    const rekapMap = {};
+    const rooms = [...getActiveRooms()];
+    rooms.forEach(room => { rekapMap[room] = { qty: 0, price: 0, baik: 0, kurang: 0, rusak: 0 }; });
+    globalAssets.forEach(a => {
+        const room = a.ruangan || 'Belum Terpetakan';
+        if (rekapMap[room]) {
+            const qty = a.jumlah || 1;
+            rekapMap[room].qty += qty;
+            rekapMap[room].price += (a.harga || 0) * qty;
+            if (a.kondisi === 'Baik') rekapMap[room].baik += qty;
+            else if (a.kondisi === 'Kurang Baik') rekapMap[room].kurang += qty;
+            else if (a.kondisi === 'Rusak Berat') rekapMap[room].rusak += qty;
+        }
+    });
+
+    const aoa = [
+        ["LAPORAN REKAPITULASI ASET KARTU INVENTARIS RUANGAN (KIR)"],
+        ["BADAN KESATUAN BANGSA DAN POLITIK KOTA BANJARMASIN"],
+        ["TAHUN ANGGARAN 2026"],
+        [],
+        ["No", "Nama Ruangan / Lokasi", "Jumlah Item Aset", "Total Nilai Perolehan (Rp)", "Kondisi Baik", "Kondisi Kurang Baik", "Kondisi Rusak Berat"]
+    ];
+
+    let totalAllQty = 0, totalAllVal = 0;
+    rooms.forEach((room, index) => {
+        const data = rekapMap[room];
+        totalAllQty += data.qty;
+        totalAllVal += data.price;
+        aoa.push([index + 1, room, data.qty, data.price, data.baik, data.kurang, data.rusak]);
+    });
+    aoa.push(["", "TOTAL KESELURUHAN:", totalAllQty, totalAllVal, "", "", ""]);
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap_Seluruh_KIR");
+    XLSX.writeFile(wb, "Rekapitulasi_KIR_Kesbangpol.xlsx");
+};
+
+window.exportRekapSelectedExcel = function() {
+    if (selectedRekapRooms.size === 0) return;
+    const rekapMap = {};
+    const selectedRoomsArr = Array.from(selectedRekapRooms);
+    selectedRoomsArr.forEach(room => { rekapMap[room] = { qty: 0, price: 0, baik: 0, kurang: 0, rusak: 0 }; });
+    globalAssets.forEach(a => {
+        const room = a.ruangan || 'Belum Terpetakan';
+        if (rekapMap[room]) {
+            const qty = a.jumlah || 1;
+            rekapMap[room].qty += qty;
+            rekapMap[room].price += (a.harga || 0) * qty;
+            if (a.kondisi === 'Baik') rekapMap[room].baik += qty;
+            else if (a.kondisi === 'Kurang Baik') rekapMap[room].kurang += qty;
+            else if (a.kondisi === 'Rusak Berat') rekapMap[room].rusak += qty;
+        }
+    });
+
+    const aoa = [
+        ["LAPORAN REKAPITULASI ASET KARTU INVENTARIS RUANGAN (KIR)"],
+        ["BADAN KESATUAN BANGSA DAN POLITIK KOTA BANJARMASIN"],
+        ["TAHUN ANGGARAN 2026"],
+        ["Laporan Rekapitulasi untuk Ruangan Terpilih"],
+        [],
+        ["No", "Nama Ruangan / Lokasi", "Jumlah Item Aset", "Total Nilai Perolehan (Rp)", "Kondisi Baik", "Kondisi Kurang Baik", "Kondisi Rusak Berat"]
+    ];
+
+    let totalAllQty = 0, totalAllVal = 0;
+    selectedRoomsArr.forEach((room, index) => {
+        const data = rekapMap[room];
+        totalAllQty += data.qty;
+        totalAllVal += data.price;
+        aoa.push([index + 1, room, data.qty, data.price, data.baik, data.kurang, data.rusak]);
+    });
+    aoa.push(["", "TOTAL KESELURUHAN:", totalAllQty, totalAllVal, "", "", ""]);
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap_Terpilih_KIR");
+    XLSX.writeFile(wb, "Rekapitulasi_Terpilih_KIR.xlsx");
+};
+
+window.exportKIRExcel = function() {
+    const roomFiltered = globalAssets.filter(a => a.ruangan === selectedRoom);
+    if (!selectedRoom) {
+        showToast('Pilih ruangan terlebih dahulu untuk di-export!', 'warning');
+        return;
+    }
+
+    const aoa = [
+        ["KARTU INVENTARIS RUANGAN (KIR)"],
+        ["BADAN KESATUAN BANGSA DAN POLITIK KOTA BANJARMASIN"],
+        [],
+        ["SKPD", "Badan Kesatuan Bangsa dan Politik", "", "Kode Lokasi", "97.00.00"],
+        ["Ruangan", selectedRoom, "", "Tahun", "2026"],
+        [],
+        ["No. Urut", "NIBAR", "Kode Barang", "Nama/Jenis Barang", "Merk/Model", "No. Seri Pabrik", "Ukuran", "Bahan", "Tahun", "Jml", "Harga (Rp)", "B (Baik)", "KB (Kurang Baik)", "RB (Rusak Berat)", "Keterangan"]
+    ];
+
+    roomFiltered.forEach((a, i) => {
+        let nibar = '-';
+        if (a.master_bmd_id) {
+            const linked = globalMasterBmd.find(b => b.id === a.master_bmd_id);
+            if (linked) nibar = linked.nibar || '-';
+        }
+        aoa.push([
+            i + 1,
+            nibar,
+            a.kode_barang || '-',
+            a.nama_barang || '-',
+            a.merk_model || '-',
+            a.no_seri || '-',
+            a.ukuran || '-',
+            a.bahan || '-',
+            a.tahun || '-',
+            a.jumlah || 1,
+            a.harga || 0,
+            a.kondisi === 'Baik' ? '✓' : '',
+            a.kondisi === 'Kurang Baik' ? '✓' : '',
+            a.kondisi === 'Rusak Berat' ? '✓' : '',
+            a.keterangan || '-'
+        ]);
+    });
+
+    if (roomFiltered.length === 0) {
+        aoa.push(["Data tidak tersedia di ruangan ini"]);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "KIR_Ruangan");
+    XLSX.writeFile(wb, `KIR_${selectedRoom.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
 };

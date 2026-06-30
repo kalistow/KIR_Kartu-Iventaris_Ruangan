@@ -20,14 +20,3 @@ function updateDashboardStats(assets) {
     if (damagedEl) damagedEl.textContent = fmt(counts.rusak);
 }
 
-function checkPesanMasuk() {
-    const banner = document.getElementById('dashboard-notification');
-    if (!banner) return;
-    
-    const pesanMasukCount = globalAssets.filter(a => a.ruangan === 'Gudang Transit' && a.status === 'Pesan Masuk').length;
-    if (pesanMasukCount > 0 && currentView === 'dashboard') {
-        banner.classList.remove('hidden');
-    } else {
-        banner.classList.add('hidden');
-    }
-}

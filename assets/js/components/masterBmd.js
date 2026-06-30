@@ -203,7 +203,7 @@ window.openBulkTransferModal = function() {
     const count = bulkSelectedBmdIds.size;
     if (count === 0) return;
     
-    const ruangan = document.getElementById('bulk-ruangan')?.value || 'Gudang Transit';
+    const ruangan = document.getElementById('bulk-ruangan')?.value || 'Belum Terpetakan';
     const kondisi = document.getElementById('bulk-kondisi')?.value || 'Baik';
     const ket = document.getElementById('bulk-keterangan')?.value || '-';
     
@@ -273,7 +273,7 @@ window.executeBulkTransfer = async function() {
     const kondisi = document.getElementById('bulk-kondisi')?.value || 'Baik';
     
     if (!ruangan) {
-        alert('Pilih ruangan tujuan terlebih dahulu!');
+        showToast('Pilih ruangan tujuan terlebih dahulu!', 'warning');
         return;
     }
     
@@ -310,6 +310,17 @@ window.executeBulkTransfer = async function() {
         }
         
         try {
+            let status = 'KIR';
+            if (ruangan === 'Aset Non-KIR' || ruangan === 'Kendaraan Dinas' || ruangan === 'Inventaris Kantor' || ruangan === 'Depan Bidang') {
+                status = 'Non-KIR';
+            } else if (ruangan === 'Masih Harus Dicari') {
+                status = 'Masih Harus Dicari';
+            } else if (ruangan === 'Barang yang Dihibahkan') {
+                status = 'Dihibahkan';
+            } else if (ruangan === 'Belum Terpetakan') {
+                status = 'Belum Terpetakan';
+            }
+
             const insertPayload = {
                 master_bmd_id: bmdItem.id,
                 no_urut: globalAssets.filter(a => a.ruangan === ruangan).length + 1 + successCount,
@@ -324,7 +335,8 @@ window.executeBulkTransfer = async function() {
                 harga: bmdItem.harga,
                 ruangan: ruangan,
                 kondisi: kondisi,
-                keterangan: document.getElementById('bulk-keterangan')?.value || `Dipetakan massal ke ${ruangan}`
+                keterangan: document.getElementById('bulk-keterangan')?.value || `Dipetakan massal ke ${ruangan}`,
+                status: status
             };
             
             const { data, error } = await supabaseClient.from('assets').insert([insertPayload]).select();
@@ -358,9 +370,9 @@ window.executeBulkTransfer = async function() {
     await loadAllData();
     
     // Show result summary
-    let resultMsg = `Pemindahan massal selesai!\n✅ Berhasil: ${successCount} barang`;
+    let resultMsg = `Pemindahan massal selesai!<br>✅ Berhasil: ${successCount} barang`;
     if (errorCount > 0) {
-        resultMsg += `\n⚠️ Gagal/Dilewati: ${errorCount} barang`;
+        resultMsg += `<br>⚠️ Gagal/Dilewati: ${errorCount} barang`;
     }
-    alert(resultMsg);
+    showToast(resultMsg, errorCount > 0 ? 'warning' : 'success');
 };

@@ -25,10 +25,6 @@ function renderNonKirTable(assets) {
         nonKirAssets = assets.filter(a => a.status === 'Masih Harus Dicari' || a.ruangan === 'Masih Harus Dicari');
         emptyMsg = "Tidak ada data aset yang masih harus dicari.";
         badgeHtml = '<span class="bg-yellow-100 text-yellow-800 py-1.5 px-3 rounded-full text-xs font-black shadow-sm border border-yellow-300">Harus Dicari</span>';
-    } else if (currentNonKirTab === 'gift') {
-        nonKirAssets = assets.filter(a => a.status === 'Dihibahkan' || a.ruangan === 'Barang yang Dihibahkan' || a.status === 'Barang yang Dihibahkan');
-        emptyMsg = "Tidak ada data barang yang dihibahkan.";
-        badgeHtml = '<span class="bg-green-100 text-green-800 py-1.5 px-3 rounded-full text-xs font-black shadow-sm border border-green-300">Dihibahkan</span>';
     }
     
     // Clear selection of IDs that are no longer in this filtered list
@@ -57,11 +53,13 @@ function renderNonKirTable(assets) {
         tr.className = 'border-b border-white/30 hover:bg-white/20 transition-colors';
         const isSelected = selectedNonKirAssetIds.has(a.id);
         
+        const usulBadge = a.status === 'Usul Penghapusan' ? `<br><span class="inline-block mt-1 bg-red-100 text-red-800 text-[10px] font-black px-2 py-0.5 rounded border border-red-300">Usul Hapus</span>` : '';
+        
         tr.innerHTML = `
-            <td class="py-4 px-2 text-center"><input type="checkbox" class="nonkir-checkbox w-4 h-4 cursor-pointer" value="${a.id}" ${isSelected ? 'checked' : ''} onchange="updateNonKirSelection()"></td>
+            <td class="py-4 px-2 text-center"><input type="checkbox" class="non-kir-checkbox w-4 h-4 cursor-pointer" value="${a.id}" ${isSelected ? 'checked' : ''} onchange="updateNonKirSelection()"></td>
             <td class="py-4 px-4 whitespace-nowrap text-center">${index + 1}</td>
             <td class="py-4 px-4 whitespace-nowrap">${a.kode_barang || '-'}</td>
-            <td class="py-4 px-4 font-extrabold text-gray-900">${a.nama_barang || '-'}</td>
+            <td class="py-4 px-4 font-extrabold text-gray-900">${a.nama_barang || '-'}${usulBadge}</td>
             <td class="py-4 px-4 text-textMuted">${a.merk_model || '-'}</td>
             <td class="py-4 px-4">${a.no_seri || '-'}</td>
             <td class="py-4 px-4">${a.ukuran || '-'}</td>

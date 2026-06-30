@@ -253,39 +253,6 @@ async function processBmdUpload(workbook, progressBar, statusText, percentText) 
         if (newBmds.length > 0) {
             const { data: insertedBmds, error: insertError } = await supabaseClient.from('master_bmd').insert(newBmds).select();
             if (insertError) throw insertError;
-            
-            const transitAssets = insertedBmds.map((b, index) => ({
-                master_bmd_id: b.id,
-                no_urut: globalAssets.length + index + 1,
-                kode_barang: b.kode_barang || '',
-                nama_barang: b.nama_barang,
-                merk_model: b.merek_tipe || '',
-                no_seri: b.nomor_polisi || b.nomor_rangka || '',
-                ukuran: '',
-                bahan: '',
-                tahun: b.tanggal_perolehan ? String(new Date(b.tanggal_perolehan).getFullYear()) : '',
-                jumlah: b.jumlah,
-                harga: b.harga,
-                ruangan: 'Gudang Transit',
-                kondisi: 'Baik',
-                keterangan: b.keterangan || 'Dari Master BMD',
-                status: b.status_penggunaan === 'Menunggu Review' ? 'Menunggu Review' : 'Pesan Masuk'
-            }));
-
-            // Hanya otomatis masuk Gudang Transit (Pesan Masuk) jika ini BUKAN import pertama kali
-            // Jika ini import pertama (database Master BMD masih kosong), biarkan semuanya "Belum Terpetakan"
-            if (transitAssets.length > 0 && globalMasterBmd.length > 0) {
-                const { data: insertedAssets, error: assetError } = await supabaseClient.from('assets').insert(transitAssets).select();
-                if (assetError) throw assetError;
-
-                const riwayat = insertedAssets.map(a => ({
-                    asset_id: a.id,
-                    jenis_perubahan: a.status === 'Menunggu Review' ? 'Barang Baru (Review Diperlukan)' : 'Aset Baru (Dari BMD)',
-                    keterangan: a.status === 'Menunggu Review' ? 'Masuk ke Gudang Transit dengan status Menunggu Review karena kecocokan parsial.' : 'Masuk otomatis ke Gudang Transit',
-                    tanggal: new Date().toISOString()
-                }));
-                await supabaseClient.from('riwayat_barang').insert(riwayat);
-            }
         }
 
         const allUpdates = [...existingBmdsToUpdate, ...missingBmdsToUpdate];
@@ -302,7 +269,6 @@ async function processBmdUpload(workbook, progressBar, statusText, percentText) 
             if (assetsToVerify.length > 0) {
                 const assetUpdates = assetsToVerify.map(a => ({
                     id: a.id,
-                    // Tetap di ruangan asal, jangan pindahkan ke Gudang Transit
                     status: 'Perlu Verifikasi'
                 }));
                 const { error: assetUpdateError } = await supabaseClient.from('assets').upsert(assetUpdates);
@@ -319,7 +285,7 @@ async function processBmdUpload(workbook, progressBar, statusText, percentText) 
         }
 
         if (newBmds.length > 0 || missingBmdsToUpdate.length > 0) {
-            let msg = `Perubahan Master BMD: ${newBmds.length} aset baru masuk Gudang Transit, ${missingBmdsToUpdate.length} aset dipindah untuk diverifikasi.`;
+            let msg = `Perubahan Master BMD: ${newBmds.length} aset baru, ${missingBmdsToUpdate.length} aset ditandai Perlu Verifikasi.`;
             await supabaseClient.from('riwayat_barang').insert([{
                 asset_id: null,
                 jenis_perubahan: 'Sinkronisasi Master BMD',
@@ -335,6 +301,7 @@ async function processBmdUpload(workbook, progressBar, statusText, percentText) 
         setTimeout(() => {
             closeImportModal();
             loadAllData();
+            showToast('Sukses sinkronisasi data BMD!', 'success');
         }, 1500);
 
     } catch (error) {
@@ -489,10 +456,10 @@ async function processKirUpload(workbook, progressBar, statusText, percentText) 
                 if (standardRoomFromRow) {
                     roomName = standardRoomFromRow;
                 } else {
-                    roomName = "Gudang Transit";
+                    roomName = rawRoom;
                 }
             } else if (!roomName) {
-                roomName = "Gudang Transit";
+                roomName = "Belum Diketahui";
             }
             
             // Decode Kode Barang & Nomor Register
@@ -535,8 +502,8 @@ async function processKirUpload(workbook, progressBar, statusText, percentText) 
                 assetStatus = 'Masih Harus Dicari';
             } else if (roomName === 'Barang yang Dihibahkan') {
                 assetStatus = 'Dihibahkan';
-            } else if (roomName === 'Gudang Transit') {
-                assetStatus = 'Pesan Masuk';
+            } else if (roomName === 'Belum Diketahui') {
+                assetStatus = 'Belum Terpetakan';
             }
             
             parsedAssets.push({
@@ -683,6 +650,7 @@ async function processKirUpload(workbook, progressBar, statusText, percentText) 
     setTimeout(() => {
         closeImportModal();
         loadAllData();
+        showToast(`Sukses memetakan ${successCount} KIR ke ruangan.`, 'success');
     }, 1500);
 }
 
