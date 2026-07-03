@@ -132,7 +132,7 @@ async function fetchRiwayat() {
     tbody.innerHTML = '';
     
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-textMuted">Belum ada riwayat aktivitas.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-textMuted">Belum ada riwayat aktivitas.</td></tr>';
         return;
     }
     
@@ -153,12 +153,6 @@ async function fetchRiwayat() {
             <td class="py-3 px-4 font-bold text-gray-900">${assetName}</td>
             <td class="py-3 px-4"><span class="clay-btn px-3 py-1 text-xs inline-block bg-pastel-blue/20">${r.jenis_perubahan}</span></td>
             <td class="py-3 px-4 text-xs italic text-textMuted" title="${r.keterangan || ''}">${r.keterangan || '-'}</td>
-            <td class="py-3 px-4 text-center">
-                <button onclick="undoAktivitas('${r.id}', '${r.asset_id}', '${jenisEscaped}', '${assetNameEscaped}')" class="text-orange-500 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 mx-auto transition-colors shadow-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-                    Restore
-                </button>
-            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -167,38 +161,6 @@ async function fetchRiwayat() {
   }
 }
 
-// Fitur Undo/Restore untuk Riwayat
-window.undoAktivitas = async function(riwayatId, assetId, jenisPerubahan, assetName) {
-    // Hanya Pemetaan yang dapat di-undo secara otomatis dengan menghapus aset dari ruangan (kembali ke Master)
-    if (jenisPerubahan.includes('Pemetaan') || jenisPerubahan === 'Penerimaan Gudang') {
-        if (!confirm(`Apakah Anda yakin ingin membatalkan (Undo) aktivitas "${jenisPerubahan}" untuk barang "${assetName}"?\n\nIni akan menghapus barang tersebut dari ruangan saat ini dan mengembalikannya ke Master BMD (Data Induk).`)) {
-            return;
-        }
-
-        try {
-            // Log the undo action
-            await supabaseClient.from('riwayat_barang').insert([{
-                asset_id: assetId,
-                jenis_perubahan: 'Undo / Restore Aktivitas',
-                keterangan: `Aktivitas "${jenisPerubahan}" dibatalkan. "${assetName}" dikembalikan ke Data Induk.`,
-                tanggal: new Date().toISOString()
-            }]);
-            
-            // Hapus aset dari table assets agar kembali unmapped
-            const { error } = await supabaseClient.from('assets').delete().eq('id', assetId);
-            if (error) throw error;
-            
-            await loadAllData();
-            showToast('Aktivitas berhasil di-undo! Barang telah dikembalikan ke Data Induk.', 'success');
-        } catch (err) {
-            console.error('Undo error:', err);
-            showToast('Gagal melakukan Undo: ' + err.message, 'error');
-        }
-    } else {
-        // Untuk Edit Data, Hapus, dll yang tidak bisa di-undo secara terbalik karena butuh historical JSON
-        showToast(`Maaf, fitur Restore otomatis tidak tersedia untuk jenis aktivitas "${jenisPerubahan}".`, 'warning');
-    }
-}
 
 window.switchView = function(viewName) {
     if (!VIEWS.includes(viewName)) return;
@@ -391,3 +353,16 @@ window.updateNonKirTabUI = function() {
     });
 };
 
+window.logoutAdmin = async function() {
+    if (!confirm('Apakah Anda yakin ingin keluar?')) return;
+    try {
+        if (typeof supabaseClient !== 'undefined') {
+            await supabaseClient.auth.signOut();
+        }
+        localStorage.removeItem('supabase.session');
+        window.location.href = 'login.html';
+    } catch (err) {
+        console.error('Error saat logout:', err);
+        window.location.href = 'login.html';
+    }
+};

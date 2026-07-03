@@ -159,6 +159,9 @@ window.updateKirSelection = function() {
 window.updateKirBulkButton = function() {
     const btn = document.getElementById('btn-bulk-delete-kir');
     const countSpan = document.getElementById('bulk-delete-kir-count');
+    const btnTransfer = document.getElementById('btn-bulk-transfer-kir');
+    const countSpanTransfer = document.getElementById('bulk-transfer-kir-count');
+    
     if (btn && countSpan) {
         const count = selectedKirAssetIds.size;
         countSpan.textContent = count;
@@ -166,6 +169,16 @@ window.updateKirBulkButton = function() {
             btn.classList.remove('hidden');
         } else {
             btn.classList.add('hidden');
+        }
+    }
+    
+    if (btnTransfer && countSpanTransfer) {
+        const count = selectedKirAssetIds.size;
+        countSpanTransfer.textContent = count;
+        if (count > 0) {
+            btnTransfer.classList.remove('hidden');
+        } else {
+            btnTransfer.classList.add('hidden');
         }
     }
     
@@ -180,5 +193,106 @@ window.updateKirBulkButton = function() {
         masterCheck.checked = allChecked;
     } else if (masterCheck) {
         masterCheck.checked = false;
+    }
+};
+
+window.openTransferKirModal = function() {
+    const count = selectedKirAssetIds.size;
+    if (count === 0) return;
+    
+    document.getElementById('transfer-kir-count').textContent = count;
+    
+    const roomSelect = document.getElementById('transfer-kir-room');
+    roomSelect.innerHTML = '';
+    const allRooms = [
+        "Ruang Kaban (Kepala Badan)", "Ruang Sekretaris", "Ruang Sekretariat",
+        "Ruang Kasubbag Keuangan", "Ruang Kasubbag Umpeg", "Ruang Kasubbag Sunram",
+        "Ruang Selasar", "Ruang Rapat", "Ruang Pelayanan", "Ruang Dapur",
+        "Ruang Kabid Ideologi", "Ruang Kabid Hansenibud"
+    ];
+    
+    allRooms.forEach(r => {
+        if(r !== selectedRoom) {
+            const opt = document.createElement('option');
+            opt.value = r;
+            opt.textContent = r;
+            roomSelect.appendChild(opt);
+        }
+    });
+    
+    document.getElementById('transfer-kir-kondisi').value = 'Baik';
+    document.getElementById('transfer-kir-keterangan').value = '';
+    
+    const modal = document.getElementById('transferKirModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+};
+
+window.closeTransferKirModal = function() {
+    const modal = document.getElementById('transferKirModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+};
+
+window.executeTransferKir = async function() {
+    const targetRoom = document.getElementById('transfer-kir-room').value;
+    const kondisi = document.getElementById('transfer-kir-kondisi').value;
+    const ket = document.getElementById('transfer-kir-keterangan').value;
+    
+    if(!targetRoom) {
+        if(typeof showToast === 'function') showToast('Pilih ruangan tujuan.', 'warning');
+        return;
+    }
+    
+    const btn = document.getElementById('transfer-kir-submit-btn');
+    const oriText = btn.innerHTML;
+    btn.innerHTML = 'Memindahkan...';
+    btn.disabled = true;
+    
+    try {
+        const updates = [];
+        const histories = [];
+        const now = new Date().toISOString();
+        
+        selectedKirAssetIds.forEach(id => {
+            updates.push({
+                id: id,
+                ruangan: targetRoom,
+                kondisi: kondisi,
+                keterangan: ket
+            });
+            histories.push({
+                asset_id: id,
+                jenis_perubahan: `Pemindahan ke ${targetRoom}`,
+                keterangan: ket,
+                tanggal: now
+            });
+        });
+        
+        for (const update of updates) {
+            const { error: errUpdate } = await supabaseClient.from('assets').update({
+                ruangan: update.ruangan,
+                kondisi: update.kondisi,
+                keterangan: update.keterangan
+            }).eq('id', update.id);
+            if (errUpdate) throw errUpdate;
+        }
+        
+        const { error: errHist } = await supabaseClient.from('riwayat_barang').insert(histories);
+        if (errHist) throw errHist;
+        
+        if(typeof showToast === 'function') showToast(`Berhasil memindahkan ${updates.length} barang ke ${targetRoom}.`, 'success');
+        
+        selectedKirAssetIds.clear();
+        closeTransferKirModal();
+        if(typeof loadAllData === 'function') await loadAllData();
+        if(typeof loadKirRoomData === 'function') loadKirRoomData();
+        
+    } catch(err) {
+        console.error('Error transfer KIR:', err);
+        if(typeof showToast === 'function') showToast('Gagal memindahkan barang: ' + err.message, 'error');
+    } finally {
+        btn.innerHTML = oriText;
+        btn.disabled = false;
     }
 };
