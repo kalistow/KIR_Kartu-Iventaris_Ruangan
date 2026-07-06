@@ -55,7 +55,7 @@ let selectedRekapRooms = new Set();
 let currentBmdPage = 1;
 let bmdItemsPerPage = 50;
 
-const VIEWS = ['dashboard', 'master-bmd', 'manajemen-kir', 'non-kir', 'usul-hapus', 'riwayat-penghapusan', 'laporan', 'riwayat-sistem'];
+const VIEWS = ['dashboard', 'master-bmd', 'manajemen-kir', 'non-kir', 'usul-hapus', 'riwayat-penghapusan', 'laporan', 'riwayat-sistem', 'verifikasi'];
 
 // Official room list
 let OFFICIAL_ROOMS = [
@@ -99,6 +99,9 @@ async function loadAllData() {
     // Refresh tables in current view
     populateAllRoomSelects();
     renderCurrentViewData();
+
+    // Load import session stat widget on dashboard
+    if (window.loadImportSessionStat) window.loadImportSessionStat();
 }
 
 async function fetchAssets() {
@@ -235,6 +238,11 @@ window.switchView = function(viewName) {
         title.textContent = 'Laporan & Cetak Rekap';
         desc.textContent = 'Rekapitulasi total aset per ruangan and export format resmi';
         populateRoomSelects();
+    } else if (viewName === 'verifikasi') {
+        title.textContent = 'Antrian Verifikasi';
+        desc.textContent = 'Tinjau dan konfirmasi hasil pencocokan aset dari impor BMD yang memerlukan keputusan admin';
+        if (window.loadVerificationQueue) window.loadVerificationQueue();
+        if (window.loadImportSessions) window.loadImportSessions();
     }
 
     renderCurrentViewData();
@@ -318,8 +326,10 @@ window.populateAllRoomSelects = function() {
 
 window.populateRoomSelects = function() {
     const rooms = getActiveRooms(globalAssets);
-    const selects = ['kir-room-select', 'rekap-rooms'];
-    selects.forEach(id => {
+    
+    // 1. Populate standard selectors
+    const standardSelects = ['kir-room-select', 'rekap-rooms', 'bulk-ruangan', 'map-ruangan'];
+    standardSelects.forEach(id => {
         const select = document.getElementById(id);
         if (!select) return;
         const currentVal = select.value;
@@ -330,12 +340,62 @@ window.populateRoomSelects = function() {
             opt.textContent = r;
             select.appendChild(opt);
         });
-        if (currentVal && rooms.includes(currentVal)) {
+        
+        // Append special options for map-ruangan
+        if (id === 'map-ruangan') {
+            const specialOpt = document.createElement('option');
+            specialOpt.value = '__DATA_INDUK__';
+            specialOpt.textContent = '📦 Kembalikan ke Data Induk (Master)';
+            specialOpt.style.backgroundColor = '#e9d5ff';
+            specialOpt.style.color = '#6b21a8';
+            specialOpt.style.fontWeight = 'bold';
+            select.appendChild(specialOpt);
+        }
+        
+        if (currentVal && (rooms.includes(currentVal) || (id === 'map-ruangan' && currentVal === '__DATA_INDUK__'))) {
             select.value = currentVal;
         } else if (rooms.length > 0) {
             select.value = rooms[0];
         }
     });
+    
+    // 2. Populate edit-ruangan selector (which has more special options)
+    const editSelect = document.getElementById('edit-ruangan');
+    if (editSelect) {
+        const currentVal = editSelect.value;
+        editSelect.innerHTML = '';
+        
+        // Add active rooms
+        rooms.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r;
+            opt.textContent = r;
+            editSelect.appendChild(opt);
+        });
+        
+        // Add special options
+        const specialOptions = [
+            { value: 'Kendaraan Dinas', text: '[Spesial] Kendaraan Dinas', bg: '#fee2e2', fg: '#991b1b' },
+            { value: 'Inventaris Kantor', text: '[Spesial] Inventaris Umum & Koridor', bg: '#e0e7ff', fg: '#3730a3' },
+            { value: 'Aset Non-KIR', text: '[Spesial] Aset Cadangan (Gudang)', bg: '#dbeafe', fg: '#1e40af' },
+            { value: 'Masih Harus Dicari', text: '[Spesial] Masih Harus Dicari (Pencarian)', bg: '#fef3c7', fg: '#92400e' },
+            { value: '__DATA_INDUK__', text: '[Aksi] Kembalikan ke Data Induk (Master)', bg: '#e9d5ff', fg: '#6b21a8' }
+        ];
+        
+        specialOptions.forEach(optData => {
+            const opt = document.createElement('option');
+            opt.value = optData.value;
+            opt.textContent = optData.text;
+            opt.style.backgroundColor = optData.bg;
+            opt.style.color = optData.fg;
+            opt.style.fontWeight = 'bold';
+            editSelect.appendChild(opt);
+        });
+        
+        if (currentVal) {
+            editSelect.value = currentVal;
+        }
+    }
 };
 
 window.updateNonKirTabUI = function() {

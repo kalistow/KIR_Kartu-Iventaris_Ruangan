@@ -26,9 +26,13 @@ function renderBmdTable(bmdData) {
         
         // Calculate mapped count
         const mappedAssets = globalAssets.filter(a => a.master_bmd_id === b.id);
+        const mappedQty = mappedAssets.reduce((sum, item) => sum + (item.jumlah || 0), 0);
+        
+        if (filterCategory === 'terpetakan') {
+            return mappedQty > 0;
+        }
         
         if (filterCategory === 'belum-terpetakan') {
-            const mappedQty = mappedAssets.reduce((sum, item) => sum + (item.jumlah || 0), 0);
             return mappedQty < (b.jumlah || 0);
         }
         

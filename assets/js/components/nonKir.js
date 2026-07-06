@@ -1,5 +1,9 @@
 // assets/js/components/nonKir.js
 
+/**
+ * Merender tabel aset non-KIR berdasarkan data aset yang masuk dan tab filter yang aktif.
+ * @param {Array<Object>} assets - Daftar aset dari database.
+ */
 function renderNonKirTable(assets) {
     const tbody = document.getElementById('non-kir-tbody');
     if (!tbody) return;
@@ -12,11 +16,11 @@ function renderNonKirTable(assets) {
     if (currentNonKirTab === 'kendaraan') {
         nonKirAssets = assets.filter(a => a.ruangan === 'Kendaraan Dinas');
         emptyMsg = "Tidak ada data kendaraan dinas.";
-        badgeHtml = '<span class="bg-red-100 text-red-800 py-1.5 px-3 rounded-full text-xs font-black shadow-sm border border-red-300">🚗 Kendaraan</span>';
+        badgeHtml = '<span class="bg-red-100 text-red-800 py-1.5 px-3 rounded-full text-xs font-black shadow-sm border border-red-300">Kendaraan</span>';
     } else if (currentNonKirTab === 'umum') {
         nonKirAssets = assets.filter(a => a.ruangan === 'Depan Bidang' || a.ruangan === 'Inventaris Kantor');
         emptyMsg = "Tidak ada data inventaris umum/luar ruangan.";
-        badgeHtml = '<span class="bg-indigo-100 text-indigo-800 py-1.5 px-3 rounded-full text-xs font-black shadow-sm border border-indigo-300">📦 Umum</span>';
+        badgeHtml = '<span class="bg-indigo-100 text-indigo-800 py-1.5 px-3 rounded-full text-xs font-black shadow-sm border border-indigo-300">Umum</span>';
     } else if (currentNonKirTab === 'non-kir') {
         nonKirAssets = assets.filter(a => (a.status === 'Tetap di Non-KIR' || a.status === 'Non-KIR' || a.ruangan === 'Aset Non-KIR') && a.ruangan !== 'Kendaraan Dinas' && a.ruangan !== 'Depan Bidang' && a.ruangan !== 'Inventaris Kantor');
         emptyMsg = "Tidak ada data aset cadangan di gudang.";
@@ -92,8 +96,12 @@ window.handleSearchNonKir = function() {
     renderNonKirTable(globalAssets);
 };
 
+/**
+ * Mengubah status centang semua checkbox di tabel non-KIR sesuai dengan checkbox master.
+ * @param {HTMLInputElement} masterCheckbox - Checkbox master di header tabel.
+ */
 window.toggleSelectAllNonKir = function(masterCheckbox) {
-    const checkboxes = document.querySelectorAll('.nonkir-checkbox');
+    const checkboxes = document.querySelectorAll('.non-kir-checkbox');
     checkboxes.forEach(cb => {
         cb.checked = masterCheckbox.checked;
         const id = parseInt(cb.value);
@@ -106,8 +114,12 @@ window.toggleSelectAllNonKir = function(masterCheckbox) {
     window.updateNonKirBulkButton();
 };
 
+/**
+ * Memperbarui state pilihan aset non-KIR yang sedang dicentang.
+ * Sinkronisasi dengan checkbox master juga dilakukan di sini.
+ */
 window.updateNonKirSelection = function() {
-    const checkboxes = document.querySelectorAll('.nonkir-checkbox');
+    const checkboxes = document.querySelectorAll('.non-kir-checkbox');
     let allChecked = true;
     let anyChecked = false;
     
@@ -130,6 +142,9 @@ window.updateNonKirSelection = function() {
     window.updateNonKirBulkButton();
 };
 
+/**
+ * Memperbarui tampilan tombol aksi massal (bulk delete) berdasarkan jumlah aset yang dicentang.
+ */
 window.updateNonKirBulkButton = function() {
     const btn = document.getElementById('btn-bulk-delete-nonkir');
     const countSpan = document.getElementById('bulk-delete-nonkir-count');
@@ -144,7 +159,7 @@ window.updateNonKirBulkButton = function() {
     }
     
     // Sync master checkbox state on render
-    const checkboxes = document.querySelectorAll('.nonkir-checkbox');
+    const checkboxes = document.querySelectorAll('.non-kir-checkbox');
     const masterCheck = document.getElementById('select-all-nonkir');
     if (masterCheck && checkboxes.length > 0) {
         let allChecked = true;

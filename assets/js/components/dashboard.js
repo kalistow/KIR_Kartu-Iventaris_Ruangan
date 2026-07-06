@@ -3,6 +3,7 @@
 function updateDashboardStats(assets) {
     const counts = { total: 0, baik: 0, kurang: 0, rusak: 0 };
     assets.forEach(a => {
+        if (a.status === 'Dimusnahkan' || a.status === 'Dihibahkan' || a.status === 'Dilelang') return;
         counts.total += (a.jumlah || 1);
         if (a.kondisi === 'Baik') counts.baik += (a.jumlah || 1);
         else if (a.kondisi === 'Kurang Baik') counts.kurang += (a.jumlah || 1);

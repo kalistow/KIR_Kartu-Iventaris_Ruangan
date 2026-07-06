@@ -120,7 +120,46 @@ window.closeAddRoomModal = function() {
     }, 300);
 };
 
-window.deleteRoom = function() {
+window.openEditRoomModal = function() {
+    const selectFilter = document.getElementById('kir-room-select');
+    if (!selectFilter) return;
+    
+    const roomToEdit = selectFilter.value;
+    if (!roomToEdit) {
+        showToast('Tidak ada ruangan terpilih untuk dieit.', 'warning');
+        return;
+    }
+    
+    // Safety check: check if room is special
+    const specialRooms = ['Aset Non-KIR', 'Masih Harus Dicari', 'Barang yang Dihibahkan', 'Kendaraan Dinas', 'Inventaris Kantor'];
+    if (specialRooms.includes(roomToEdit)) {
+        showToast(`Ruangan khusus "${roomToEdit}" tidak dapat diubah namanya.`, 'error');
+        return;
+    }
+
+    const oldNameInput = document.getElementById('edit-room-old-name');
+    const newNameInput = document.getElementById('edit-room-new-name');
+    if (oldNameInput) oldNameInput.value = roomToEdit;
+    if (newNameInput) newNameInput.value = roomToEdit;
+    
+    const modal = document.getElementById('edit-room-modal');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.querySelector('.clay-panel').classList.remove('scale-95');
+    }, 10);
+};
+
+window.closeEditRoomModal = function() {
+    const modal = document.getElementById('edit-room-modal');
+    modal.classList.add('opacity-0');
+    modal.querySelector('.clay-panel').classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+};
+
+window.deleteRoom = async function() {
     const selectFilter = document.getElementById('kir-room-select');
     if (!selectFilter) return;
     
@@ -139,14 +178,38 @@ window.deleteRoom = function() {
     
     // Safety check: check if the room contains assets
     const assetsInRoom = globalAssets.filter(a => a.ruangan === roomToDelete);
+    let deleteAssetsPermanently = false;
+    
     if (assetsInRoom.length > 0) {
-        showToast(`Ruangan "${roomToDelete}" tidak dapat dihapus karena masih berisi ${assetsInRoom.length} barang terdaftar di dalamnya. Silakan pindahkan semua barang di ruangan ini ke ruangan lain terlebih dahulu.`, 'warning');
-        return;
+        // Let's prompt with warning details and the option to delete permanently
+        const confirmMsg = `Ruangan "${roomToDelete}" tidak dapat dihapus karena masih berisi ${assetsInRoom.length} barang terdaftar di dalamnya.\n\n` +
+                           `Apakah Anda yakin ingin menghapus ruangan ini beserta seluruh barang di dalamnya secara PERMANEN?\n\n` +
+                           `Tindakan ini tidak dapat dibatalkan!`;
+        if (confirm(confirmMsg)) {
+            deleteAssetsPermanently = true;
+        } else {
+            return;
+        }
+    } else {
+        // Confirm deletion for empty room
+        if (!confirm(`Apakah Anda yakin ingin menghapus ruangan "${roomToDelete}"?\n\nRuangan ini tidak akan ditampilkan lagi di daftar pilihan.`)) {
+            return;
+        }
     }
     
-    // Confirm deletion
-    if (!confirm(`Apakah Anda yakin ingin menghapus ruangan "${roomToDelete}"?\n\nRuangan ini tidak akan ditampilkan lagi di daftar pilihan.`)) {
-        return;
+    // If we need to delete assets permanently first
+    if (deleteAssetsPermanently) {
+        try {
+            const assetIds = assetsInRoom.map(a => a.id);
+            const { error: deleteError } = await supabaseClient.from('assets').delete().in('id', assetIds);
+            if (deleteError) throw deleteError;
+            
+            showToast(`${assetsInRoom.length} barang di dalam ruangan telah dihapus secara permanen.`, 'success');
+        } catch (err) {
+            console.error('Error deleting assets for room deletion:', err);
+            showToast('Gagal menghapus barang di dalam ruangan: ' + err.message, 'error');
+            return;
+        }
     }
     
     // Delete custom rooms or add to deleted official rooms
@@ -166,11 +229,17 @@ window.deleteRoom = function() {
         }
     }
     
-    // Refresh selects
-    populateAllRoomSelects();
-    
-    // Refresh table
-    renderKirTable(globalAssets);
+    // Refresh data and UI
+    if (deleteAssetsPermanently) {
+        if (typeof loadAllData !== 'undefined') {
+            await loadAllData();
+        }
+    } else {
+        // Refresh selects
+        populateAllRoomSelects();
+        // Refresh table
+        renderKirTable(globalAssets);
+    }
     
     showToast(`Ruangan "${roomToDelete}" berhasil dihapus.`, 'success');
 };
@@ -564,6 +633,87 @@ document.addEventListener('DOMContentLoaded', () => {
             if (kirSelect) kirSelect.value = name;
             if (typeof loadKirRoomData !== 'undefined') loadKirRoomData();
             showToast(`Ruangan "${name}" berhasil ditambahkan.`, 'success');
+        });
+    }
+
+    // 3.5 Edit Room Form Submit
+    const editRoomForm = document.getElementById('edit-room-form');
+    if (editRoomForm) {
+        editRoomForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const oldName = document.getElementById('edit-room-old-name').value;
+            const newName = document.getElementById('edit-room-new-name').value.trim();
+            if (!oldName || !newName) return;
+            
+            if (oldName === newName) {
+                if (typeof closeEditRoomModal !== 'undefined') closeEditRoomModal();
+                return;
+            }
+
+            const specialRooms = ['Aset Non-KIR', 'Masih Harus Dicari', 'Barang yang Dihibahkan', 'Kendaraan Dinas', 'Inventaris Kantor'];
+            if (specialRooms.includes(newName)) {
+                showToast(`Nama ruangan "${newName}" tidak dapat digunakan karena merupakan ruangan khusus.`, 'error');
+                return;
+            }
+
+            const btn = document.getElementById('edit-room-submit-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span>Menyimpan...';
+            btn.disabled = true;
+
+            try {
+                // Update in Supabase assets table
+                const { error } = await supabaseClient
+                    .from('assets')
+                    .update({ ruangan: newName })
+                    .eq('ruangan', oldName);
+
+                if (error) throw error;
+
+                // Update in LocalStorage
+                let customRooms = JSON.parse(localStorage.getItem('simbar.custom_rooms') || '[]');
+                if (!Array.isArray(customRooms)) customRooms = [];
+
+                let deletedRooms = JSON.parse(localStorage.getItem('simbar.deleted_rooms') || '[]');
+                if (!Array.isArray(deletedRooms)) deletedRooms = [];
+
+                const customIndex = customRooms.indexOf(oldName);
+                if (customIndex !== -1) {
+                    customRooms[customIndex] = newName;
+                    localStorage.setItem('simbar.custom_rooms', JSON.stringify(customRooms));
+                } else {
+                    if (!deletedRooms.includes(oldName)) {
+                        deletedRooms.push(oldName);
+                        localStorage.setItem('simbar.deleted_rooms', JSON.stringify(deletedRooms));
+                    }
+                    if (!customRooms.includes(newName)) {
+                        customRooms.push(newName);
+                        localStorage.setItem('simbar.custom_rooms', JSON.stringify(customRooms));
+                    }
+                }
+
+                if (deletedRooms.includes(newName)) {
+                    deletedRooms = deletedRooms.filter(r => r !== newName);
+                    localStorage.setItem('simbar.deleted_rooms', JSON.stringify(deletedRooms));
+                }
+
+                if (typeof closeEditRoomModal !== 'undefined') closeEditRoomModal();
+                if (typeof loadAllData !== 'undefined') await loadAllData();
+                
+                const kirSelect = document.getElementById('kir-room-select');
+                if (kirSelect) {
+                    kirSelect.value = newName;
+                }
+                if (typeof loadKirRoomData !== 'undefined') loadKirRoomData();
+
+                showToast(`Nama ruangan "${oldName}" berhasil diubah menjadi "${newName}".`, 'success');
+            } catch (err) {
+                console.error('Rename Room Error:', err);
+                showToast('Gagal mengubah nama ruangan: ' + err.message, 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         });
     }
 

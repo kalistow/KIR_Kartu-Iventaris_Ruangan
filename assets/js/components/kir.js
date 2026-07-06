@@ -1,9 +1,14 @@
 // assets/js/components/kir.js
 
-function renderKirTable(assets) {
+function renderKirTable(assets = []) {
     const tbody = document.getElementById('kir-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
+    
+    if (!Array.isArray(assets)) {
+        tbody.innerHTML = '<tr><td colspan="18" class="text-center py-10 text-textMuted">Data aset tidak valid.</td></tr>';
+        return;
+    }
     
     // Filter by selected room
     const roomFiltered = assets.filter(a => a.ruangan === selectedRoom && a.ruangan !== 'Belum Terpetakan');
@@ -43,7 +48,7 @@ function renderKirTable(assets) {
         
         // Lookup NIBAR from Master BMD
         let nibar = '-';
-        if (a.master_bmd_id) {
+        if (a.master_bmd_id && Array.isArray(globalMasterBmd)) {
             const linked = globalMasterBmd.find(b => b.id === a.master_bmd_id);
             if (linked) nibar = linked.nibar || '-';
         }
@@ -204,12 +209,7 @@ window.openTransferKirModal = function() {
     
     const roomSelect = document.getElementById('transfer-kir-room');
     roomSelect.innerHTML = '';
-    const allRooms = [
-        "Ruang Kaban (Kepala Badan)", "Ruang Sekretaris", "Ruang Sekretariat",
-        "Ruang Kasubbag Keuangan", "Ruang Kasubbag Umpeg", "Ruang Kasubbag Sunram",
-        "Ruang Selasar", "Ruang Rapat", "Ruang Pelayanan", "Ruang Dapur",
-        "Ruang Kabid Ideologi", "Ruang Kabid Hansenibud"
-    ];
+    const allRooms = getActiveRooms();
     
     allRooms.forEach(r => {
         if(r !== selectedRoom) {

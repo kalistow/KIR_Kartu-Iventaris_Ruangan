@@ -21,6 +21,8 @@ function getStandardRoomName(sheetName) {
     if (clean.includes('DEPAN BIDANG')) return "Depan Bidang";
     if (clean.includes('INVENTARIS KANTOR') || clean.includes('BARANG INVENTARIS')) return "Inventaris Kantor";
     if (clean.includes('KENDARAAN')) return "Kendaraan Dinas";
+    if (clean.includes('DICARI') || clean.includes('HARUS DICARI')) return "Masih Harus Dicari";
+    if (clean.includes('HIBAH') || clean.includes('DIHIBAHKAN')) return "Barang yang Dihibahkan";
     
     return null; // non-room or unmapped sheet
 }

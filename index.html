@@ -185,6 +185,18 @@
                 </svg>
                 Laporan & Cetak
             </button>
+            <!-- Verifikasi Tab (Smart Matching Engine) -->
+            <button id="nav-verifikasi" onclick="switchView('verifikasi')"
+                class="clay-btn py-3 px-5 flex items-center gap-3 text-textMuted hover:text-textMain w-full text-left">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                    </path>
+                </svg>
+                <span class="flex-1">Verifikasi</span>
+                <span id="nav-verifikasi-badge" class="hidden text-[10px] font-extrabold bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full min-w-[1.25rem] text-center">!</span>
+            </button>
         </nav>
 
         <div class="mt-auto pt-6 border-t-2 border-slate-300">
@@ -397,11 +409,24 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
                 </div>
             </div>
 
+            <!-- Import Session Stat Widget (Smart Matching Engine v2) -->
+            <div class="clay-panel p-5 border-l-4 border-blue-400 bg-blue-50/30">
+                <div class="flex items-center gap-2 mb-2">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                    <span class="text-xs font-black text-blue-700 uppercase tracking-wider">Smart Matching Engine — Sesi Impor Terakhir</span>
+                </div>
+                <div id="vq-stat-widget" class="text-xs text-textMuted font-bold">
+                    Memuat statistik...
+                </div>
+            </div>
+
             <!-- Recent Activity/Riwayat Section -->
             <div class="clay-panel p-8 flex flex-col mb-2">
                 <h3 class="text-xl font-extrabold tracking-tight mb-4 flex items-center gap-2">
                     <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    Log Riwayat & Aktivitas Mutasi
+                    Log Riwayat &amp; Aktivitas Mutasi
                 </h3>
                 <div
                     class="overflow-x-auto rounded-[2rem] shadow-clay-pressed p-5 bg-surface/50 max-h-96 overflow-y-auto">
@@ -426,6 +451,89 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
             </div>
         </div>
 
+        <!-- ================= PANEL: VERIFIKASI (Smart Matching Engine) ================= -->
+        <div id="verifikasi-panel" class="flex flex-col gap-6 hidden">
+
+            <!-- Top: Riwayat Sesi Impor -->
+            <div class="clay-panel p-6">
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h3 class="text-lg font-extrabold tracking-tight flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Riwayat Sesi Impor BMD
+                        </h3>
+                        <p class="text-xs text-textMuted font-bold mt-0.5">Klik sesi untuk melihat item yang memerlukan verifikasi</p>
+                    </div>
+                    <button onclick="loadImportSessions()" class="clay-btn px-4 py-2 text-xs font-bold text-textMuted hover:text-textMain flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Refresh
+                    </button>
+                </div>
+                <div id="vq-sessions-list" class="flex flex-col gap-3">
+                    <div class="text-xs text-textMuted font-bold animate-pulse py-4 text-center">Memuat riwayat sesi...</div>
+                </div>
+            </div>
+
+            <!-- Bottom: Antrian Verifikasi -->
+            <div class="clay-panel p-6 flex-1">
+                <!-- Panel Header -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h3 class="text-lg font-extrabold tracking-tight flex items-center gap-2">
+                            <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                            Antrian Verifikasi Pencocokan
+                        </h3>
+                        <p class="text-xs text-textMuted font-bold mt-0.5">Tinjau dan putuskan item yang memiliki confidence 80–94%</p>
+                    </div>
+                    <button onclick="loadVerificationQueue(_vqCurrentSession)" class="clay-btn px-4 py-2 text-xs font-bold text-textMuted hover:text-textMain flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="flex items-center gap-2 mb-5 pb-4 border-b border-slate-200 flex-wrap">
+                    <button id="vq-tab-REVIEW" onclick="vqSetFilter('REVIEW')"
+                        class="clay-btn px-4 py-2 text-sm font-extrabold text-blue-900 bg-pastel-blue !shadow-clay-pressed flex items-center gap-2">
+                        <svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 102 0V7zm-1 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+                        Perlu Review
+                        <span id="vq-badge-REVIEW" class="text-[10px] font-black bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full min-w-[1.25rem] text-center">0</span>
+                    </button>
+                    <button id="vq-tab-APPROVED" onclick="vqSetFilter('APPROVED')"
+                        class="clay-btn px-4 py-2 text-sm font-bold text-textMuted hover:text-textMain flex items-center gap-2">
+                        <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                        Disetujui
+                        <span id="vq-badge-APPROVED" class="text-[10px] font-black bg-green-100 text-green-800 px-2 py-0.5 rounded-full border border-green-200 min-w-[1.25rem] text-center">0</span>
+                    </button>
+                    <button id="vq-tab-REJECTED" onclick="vqSetFilter('REJECTED')"
+                        class="clay-btn px-4 py-2 text-sm font-bold text-textMuted hover:text-textMain flex items-center gap-2">
+                        <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                        Ditolak
+                        <span id="vq-badge-REJECTED" class="text-[10px] font-black bg-red-100 text-red-700 px-2 py-0.5 rounded-full border border-red-200 min-w-[1.25rem] text-center">0</span>
+                    </button>
+                    <button id="vq-tab-ALL" onclick="vqSetFilter('ALL')"
+                        class="clay-btn px-4 py-2 text-sm font-bold text-textMuted hover:text-textMain flex items-center gap-2">
+                        Semua
+                        <span id="vq-badge-ALL" class="text-[10px] font-black bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200 min-w-[1.25rem] text-center">0</span>
+                    </button>
+                </div>
+
+                <!-- Scrollable Items Area -->
+                <div id="vq-content" class="max-h-[60vh] overflow-y-auto pr-1">
+                    <div class="flex flex-col items-center justify-center py-24 gap-4 text-textMuted">
+                        <svg class="w-16 h-16 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"/>
+                        </svg>
+                        <p class="font-bold text-sm">Pilih sesi impor di atas untuk melihat antrian verifikasi.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ================= PANEL 2: MASTER BMD ================= -->
         <div id="master-bmd-panel" class="clay-panel p-8 flex-1 flex flex-col hidden">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -440,6 +548,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
                         <select id="filter-bmd-category" onchange="handleFilterBmdCategoryChange()"
                             class="px-5 py-3 rounded-2xl bg-surface shadow-clay focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold appearance-none w-full md:w-72 cursor-pointer text-sm">
                             <option value="semua">Semua Kategori</option>
+                            <option value="terpetakan">Terpetakan</option>
                             <option value="belum-terpetakan">Belum Terpetakan</option>
                         </select>
                     </div>
@@ -586,6 +695,13 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
                             title="Tambah Ruangan Baru">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                        </button>
+                        <button onclick="openEditRoomModal()"
+                            class="clay-btn p-3.5 flex items-center justify-center text-amber-700 bg-pastel-yellow/30 hover:bg-yellow-100"
+                            title="Edit Nama Ruangan Terpilih">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                             </svg>
                         </button>
                         <button onclick="deleteRoom()"
@@ -1335,6 +1451,53 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
         </div>
     </div>
 
+    <!-- Modal Edit Nama Ruangan -->
+    <div id="edit-room-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="clay-panel w-full max-w-md mx-4 p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            <button onclick="closeEditRoomModal()"
+                class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+
+            <h2 class="text-xl font-black text-textMain mb-6 flex items-center gap-3">
+                <span class="w-10 h-10 rounded-full shadow-clay flex items-center justify-center bg-surface">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                </span>
+                Edit Nama Ruangan
+            </h2>
+
+            <form id="edit-room-form" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Nama Ruangan Lama</label>
+                    <input type="text" id="edit-room-old-name" readonly disabled
+                        class="w-full px-4 py-3 rounded-2xl bg-slate-100 border border-slate-200 text-textMuted font-bold cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Nama Ruangan Baru <span class="text-red-500">*</span></label>
+                    <input type="text" id="edit-room-new-name" required
+                        class="w-full px-4 py-3 rounded-2xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-textMain font-bold"
+                        placeholder="Contoh: Ruang Kabid Wasnas Baru">
+                </div>
+
+                <div class="flex justify-end gap-4 pt-4 border-t border-slate-300">
+                    <button type="button" onclick="closeEditRoomModal()"
+                        class="clay-btn px-6 py-3 text-textMuted hover:text-textMain !shadow-clay-sm">Batal</button>
+                    <button type="submit" id="edit-room-submit-btn"
+                        class="clay-btn px-8 py-3 bg-pastel-blue text-blue-900 !shadow-clay-blue hover:bg-blue-100 font-extrabold">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal Import Excel -->
     <div id="import-modal"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
@@ -1357,28 +1520,15 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
             </h2>
 
             <div class="space-y-6">
-                <div>
-                    <label class="block text-xs font-black uppercase tracking-wider text-textMuted mb-2 ml-2">Pilih
-                        Jenis Dokumen</label>
-                    <div class="grid grid-cols-2 gap-4">
-                        <label
-                            class="clay-btn p-4 flex flex-col items-center justify-center gap-2 cursor-pointer text-center"
-                            id="lbl-type-bmd">
-                            <input type="radio" name="import-type" value="bmd" checked class="hidden"
-                                onchange="toggleImportLabel('bmd')">
-                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1v1H9V7zm5 0h1v1h-1V7zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1z"></path></svg>
-                            <span class="text-sm font-extrabold text-blue-900" id="txt-type-bmd">Master BMD
-                                (2026)</span>
-                        </label>
-                        <label
-                            class="clay-btn p-4 flex flex-col items-center justify-center gap-2 cursor-pointer text-center"
-                            id="lbl-type-kir">
-                            <input type="radio" name="import-type" value="kir" class="hidden"
-                                onchange="toggleImportLabel('kir')">
-                            <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                            <span class="text-sm font-bold text-textMuted" id="txt-type-kir">KIR Ruangan (2025)</span>
-                        </label>
-                    </div>
+                <!-- Hidden input for backward compatibility -->
+                <input type="radio" name="import-type" value="bmd" checked class="hidden">
+
+                <div class="bg-blue-50/50 p-5 rounded-[2rem] border border-blue-200/50 text-center">
+                    <p class="text-sm text-blue-900 font-extrabold flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1v1H9V7zm5 0h1v1h-1V7zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1z"></path></svg>
+                        Sinkronisasi Master BMD Terbaru (2026)
+                    </p>
+                    <p class="text-xs text-textMuted mt-1">Mengunggah file Excel Master BMD untuk memperbarui status dan penempatan barang secara otomatis.</p>
                 </div>
 
                 <div
@@ -1390,20 +1540,6 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
                     <p class="font-extrabold text-sm text-textMain" id="file-drag-label">Seret file Excel Anda ke sini
                         atau klik untuk memilih file</p>
                     <p class="text-xs text-textMuted mt-1" id="file-name-label">Mendukung format .xlsx dan .xls</p>
-                </div>
-
-                <!-- AI Mapping Config (hanya untuk KIR) -->
-                <div id="ai-mapping-container" class="hidden space-y-4 bg-white/30 p-4 rounded-[1.5rem] border border-slate-300">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" id="use-gemini-ai" checked class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <span class="font-extrabold text-sm text-textMain">Gunakan Gemini AI untuk Sinkronisasi Lebih Akurat</span>
-                    </label>
-                    <div id="gemini-key-input-wrapper" class="space-y-1">
-                        <label class="block text-[10px] font-black uppercase tracking-wider text-textMuted ml-2">Gemini API Key</label>
-                        <input type="password" id="gemini-api-key" value=""
-                            class="w-full px-4 py-2.5 rounded-xl bg-surface shadow-clay-pressed focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs font-bold text-textMain"
-                            placeholder="Masukkan API Key Gemini...">
-                    </div>
                 </div>
 
                 <div id="import-progress" class="hidden space-y-2">
@@ -1420,7 +1556,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
                     <button onclick="closeImportModal()"
                         class="clay-btn px-6 py-3 text-textMuted hover:text-textMain !shadow-clay-sm">Batal</button>
                     <button id="start-import-btn" onclick="startImportProcess()" disabled
-                        class="clay-btn px-8 py-3 bg-pastel-blue text-blue-900 opacity-50 cursor-not-allowed !shadow-clay-blue hover:bg-blue-100">
+                        class="clay-btn px-8 py-3 bg-pastel-blue text-blue-900 opacity-50 cursor-not-allowed !shadow-clay-blue hover:bg-blue-100 font-extrabold">
                         Mulai Import
                     </button>
                 </div>
@@ -1792,9 +1928,24 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
     <script src="assets/js/config/supabase.js"></script>
     <script src="assets/js/main.js"></script>
     
+    <!-- CDN Libraries (tambahan) -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+    
     <!-- Utilities -->
     <script src="assets/js/utils/formatters.js"></script>
     <script src="assets/js/utils/fuzzy.js"></script>
+
+    <!-- Smart Matching Engine Modules (load order: foundation → engine → orchestrator) -->
+    <script src="assets/js/modules/import/dataCleaner.js"></script>
+    <script src="assets/js/modules/import/fingerprint.js"></script>
+    <script src="assets/js/modules/import/ruleEngine.js"></script>
+    <script src="assets/js/modules/import/similarity.js"></script>
+    <script src="assets/js/modules/import/confidence.js"></script>
+    <script src="assets/js/modules/import/historyManager.js"></script>
+    <script src="assets/js/modules/import/verification.js"></script>
+    <script src="assets/js/modules/import/roomMapper.js"></script>
+    <script src="assets/js/modules/import/excelParser.js"></script>
+    <script src="assets/js/modules/import/matchingEngine.js"></script>
     
     <!-- Components -->
     <script src="assets/js/components/dashboard.js"></script>
@@ -1806,6 +1957,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
     <script src="assets/js/components/rekap.js"></script>
     <script src="assets/js/components/importExcel.js"></script>
     <script src="assets/js/components/modals.js"></script>
+    <script src="assets/js/components/verificationQueue.js"></script>
 </body>
 
 </html>
