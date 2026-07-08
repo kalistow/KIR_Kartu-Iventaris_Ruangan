@@ -10,23 +10,44 @@ window.switchRiwayatPenghapusanTab = function(tabName) {
 
 function updateRiwayatPenghapusanTabUI() {
     const tabs = ['Dimusnahkan', 'Dihibahkan', 'Dilelang'];
+    const assetsList = typeof globalAssets !== 'undefined' ? globalAssets : [];
+
     tabs.forEach(tab => {
         const btn = document.getElementById(`tab-riwayat-${tab.toLowerCase()}`);
         if (btn) {
+            const count = assetsList.filter(a => a.status === tab).length;
+            let iconColor = 'text-red-500';
+            let pathD = 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16';
+            
+            if (tab === 'Dihibahkan') {
+                iconColor = 'text-green-500';
+                pathD = 'M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7';
+            } else if (tab === 'Dilelang') {
+                iconColor = 'text-blue-500';
+                pathD = 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z';
+            }
+
+            const iconSvg = `<svg class="w-5 h-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${pathD}"></path></svg>`;
+            
+            btn.innerHTML = `
+                ${iconSvg} 
+                <span>${tab}</span> 
+                <span class="ml-1 px-2 py-0.5 text-[10px] rounded-full bg-slate-100/80 text-slate-700 font-black border border-slate-200">${count}</span>
+            `;
+
             if (tab === currentRiwayatPenghapusanTab) {
-                btn.classList.add('bg-white', 'shadow-clay');
-                btn.classList.remove('text-textMuted');
-                btn.classList.add('text-textMain');
+                btn.className = "clay-btn py-2 px-5 text-sm flex items-center gap-2 font-bold bg-white shadow-clay text-textMain";
             } else {
-                btn.classList.remove('bg-white', 'shadow-clay');
-                btn.classList.add('text-textMuted');
-                btn.classList.remove('text-textMain');
+                btn.className = "clay-btn py-2 px-5 text-sm flex items-center gap-2 font-bold text-textMuted hover:text-textMain";
             }
         }
     });
 }
 
 function renderRiwayatPenghapusanTable(assets) {
+    // Jalankan update tab UI agar jumlah counter di badge tombol sinkron
+    updateRiwayatPenghapusanTabUI();
+
     const tbody = document.getElementById('riwayat-penghapusan-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
