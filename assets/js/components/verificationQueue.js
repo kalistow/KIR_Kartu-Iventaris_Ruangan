@@ -77,16 +77,52 @@ window.vqRejectItem = async function(queueId) {
 };
 
 window.vqMarkAsNew = async function(queueId) {
-    // Tandai sebagai aset baru — reject match tapi flag sebagai NEW
+    const item = _vqItems.find(i => i.id === queueId);
+    if (!item) return;
+
     _vqSetRowLoading(queueId, true);
     const adminEmail = window._currentAdminEmail || '';
-    const ok = await window.Verification.rejectVerificationItem(queueId, 'Ditandai sebagai Aset Baru oleh admin.', adminEmail);
-    if (ok) {
-        showToast('Ditandai sebagai Aset Baru.', 'info');
+
+    try {
+        // 1. Masukkan incoming_data ke master_bmd sebagai baris barang baru
+        const cleanIncoming = { ...item.incoming_data };
+        // Bersihkan field temporary pencarian agar tidak eror di DB
+        delete cleanIncoming.id;
+        delete cleanIncoming._norm_nama;
+        delete cleanIncoming._norm_merk;
+        delete cleanIncoming._norm_spek;
+        delete cleanIncoming._norm_kode;
+        delete cleanIncoming._norm_satuan;
+
+        const { error: insertErr } = await supabaseClient
+            .from('master_bmd')
+            .insert([{ 
+                ...cleanIncoming, 
+                status_penggunaan: 'Aktif',
+                confidence_score: 100 
+            }]);
+
+        if (insertErr) throw insertErr;
+
+        // 2. Tandai antrean sebagai APPROVED dengan catatan khusus
+        const { error: queueErr } = await supabaseClient
+            .from('verification_queue')
+            .update({
+                status: 'APPROVED',
+                decision_by: adminEmail,
+                decision_at: new Date().toISOString(),
+                notes: 'Ditandai sebagai Aset Baru (Bukan duplikat data lama)'
+            })
+            .eq('id', queueId);
+
+        if (queueErr) throw queueErr;
+
+        showToast('Barang berhasil didaftarkan sebagai Aset Baru ke Master BMD.', 'success');
         _vqSelectedIds.delete(queueId);
         await _vqRefresh();
-    } else {
-        showToast('Gagal menandai item.', 'error');
+    } catch (err) {
+        console.error('[VerificationQueue] Gagal menandai aset baru:', err);
+        showToast('Gagal menandai aset baru: ' + err.message, 'error');
         _vqSetRowLoading(queueId, false);
     }
 };

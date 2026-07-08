@@ -39,7 +39,7 @@ function parseBmdWorkbook(workbook) {
         const name  = row[8] ? String(row[8]).trim() : '';
         const qty   = parseInt(row[19]);
 
-        if (nibar.startsWith('12') && name && !isNaN(qty) && qty > 0) {
+        if (nibar && name && !isNaN(qty) && qty > 0) {
             const codeParts = [row[1], row[2], row[3], row[4], row[5], row[7]]
                 .filter(x => x !== undefined && x !== null && x !== '');
             const combinedCode = codeParts.length > 3
@@ -72,7 +72,7 @@ function parseBmdWorkbook(workbook) {
     if (records.length === 0) {
         return {
             records: [],
-            error: 'Tidak ada baris aset valid ditemukan! Periksa apakah kolom NIBAR dimulai dengan "12" dan kolom Jumlah berisi angka.',
+            error: 'Tidak ada baris aset valid ditemukan! Periksa apakah kolom NIBAR dan Nama Barang sudah terisi, serta kolom Jumlah berisi angka lebih dari 0.',
             totalRawRows: rows.length,
         };
     }

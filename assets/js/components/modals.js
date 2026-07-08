@@ -44,7 +44,21 @@ window.openEditModal = function(id) {
         if (warningDiv) warningDiv.classList.add('hidden');
     }
     document.getElementById('edit-kondisi').value = asset.kondisi || 'Baik';
-    document.getElementById('edit-keterangan').value = asset.keterangan || '';
+    
+    // Parse Penanggung Jawab dari keterangan
+    let pjVal = '';
+    let ketVal = asset.keterangan || '';
+    const pjRegex = /^\[Penanggung Jawab:\s*(.*?)\]\s*(.*)/s;
+    const match = ketVal.match(pjRegex);
+    if (match) {
+        pjVal = match[1];
+        ketVal = match[2];
+    }
+    
+    const elPj = document.getElementById('edit-penanggung-jawab');
+    if (elPj) elPj.value = pjVal;
+    
+    document.getElementById('edit-keterangan').value = ketVal;
     
     const modal = document.getElementById('edit-modal');
     modal.classList.remove('hidden');
@@ -81,6 +95,30 @@ window.openAddAssetModal = function() {
     
     const targetRoomLabel = document.getElementById('add-asset-target-room');
     if (targetRoomLabel) targetRoomLabel.textContent = selectedRoom;
+    
+    const modal = document.getElementById('add-asset-modal');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.querySelector('.clay-panel').classList.remove('scale-95');
+    }, 10);
+};
+
+window.openAddNonKirAssetModal = function() {
+    const form = document.getElementById('add-asset-form');
+    if (form) form.reset();
+    
+    // Tentukan ruangan berdasarkan tab non-KIR yang aktif
+    let targetRoom = 'Aset Non-KIR';
+    if (typeof currentNonKirTab !== 'undefined') {
+        if (currentNonKirTab === 'kendaraan') targetRoom = 'Kendaraan Dinas';
+        else if (currentNonKirTab === 'umum') targetRoom = 'Inventaris Kantor';
+        else if (currentNonKirTab === 'non-kir') targetRoom = 'Aset Non-KIR';
+        else if (currentNonKirTab === 'search') targetRoom = 'Masih Harus Dicari';
+    }
+    
+    const targetRoomLabel = document.getElementById('add-asset-target-room');
+    if (targetRoomLabel) targetRoomLabel.textContent = targetRoom;
     
     const modal = document.getElementById('add-asset-modal');
     modal.classList.remove('hidden');
@@ -370,7 +408,8 @@ window.openMapModal = function(id) {
     document.getElementById('map-bmd-id').value = item.id;
     document.getElementById('map-bmd-name').textContent = item.nama_barang || '-';
     document.getElementById('map-bmd-nibar').textContent = item.nibar || '-';
-    document.getElementById('map-bmd-year').textContent = item.tanggal_perolehan ? new Date(item.tanggal_perolehan).getFullYear() : '-';
+    // FIX timezone: substring(0,4) lebih aman dari getFullYear() agar tahun tidak bergeser di UTC+8
+    document.getElementById('map-bmd-year').textContent = item.tanggal_perolehan ? String(item.tanggal_perolehan).substring(0, 4) : '-';
     document.getElementById('map-bmd-qty').textContent = item.jumlah || 0;
     document.getElementById('map-bmd-price').textContent = 'Rp ' + fmt(item.harga);
     
@@ -480,8 +519,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const tahun = document.getElementById('edit-tahun').value;
             const harga = document.getElementById('edit-harga').value;
             const kondisi = document.getElementById('edit-kondisi').value;
-            const ket = document.getElementById('edit-keterangan').value;
+            const ketRaw = document.getElementById('edit-keterangan').value;
+            const pj = document.getElementById('edit-penanggung-jawab')?.value.trim() || '';
             const ruangan = document.getElementById('edit-ruangan').value;
+
+            // Rakit keterangan: gabungkan penanggung jawab jika ada
+            const ket = pj ? `[Penanggung Jawab: ${pj}] ${ketRaw}` : ketRaw;
 
             try {
                 const { error } = await supabaseClient.from('assets').update({
@@ -552,7 +595,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const kondisi = document.getElementById('add-kondisi').value;
             const ket = document.getElementById('add-keterangan').value;
 
-            const selectedRoom = (typeof currentKirRoom !== 'undefined' && currentKirRoom) ? currentKirRoom : "Belum Terpetakan";
+            const targetRoomLabel = document.getElementById('add-asset-target-room');
+            const selectedRoom = targetRoomLabel ? targetRoomLabel.textContent : "Belum Terpetakan";
 
             try {
                 const { data, error } = await supabaseClient.from('assets').insert([{
@@ -873,7 +917,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     no_seri: bmdItem.nomor_polisi || bmdItem.nomor_rangka || '',
                     ukuran: '',
                     bahan: '',
-                    tahun: bmdItem.tanggal_perolehan ? String(new Date(bmdItem.tanggal_perolehan).getFullYear()) : '',
+                    // FIX timezone: substring(0,4) lebih aman dari getFullYear() agar tahun tidak bergeser di UTC+8
+                    tahun: bmdItem.tanggal_perolehan ? String(bmdItem.tanggal_perolehan).substring(0, 4) : '',
                     jumlah: jumlah,
                     harga: bmdItem.harga,
                     ruangan: targetRoom,

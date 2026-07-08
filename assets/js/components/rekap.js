@@ -146,6 +146,7 @@ window.updateRekapButtonsState = function() {
 };
 
 window.triggerPrintRekap = function() {
+    const pejabat = window.getPejabat();
     const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     
     // Group assets by room
@@ -238,15 +239,15 @@ window.triggerPrintRekap = function() {
               Mengetahui:<br>
               <strong>Pengguna Barang</strong>
               <br><br><br><br>
-              <u><strong>Ahmad Muzaiyin, S.Sos, M.A</strong></u><br>
-              NIP. 19740328 199311 1 001
+              <u><strong>${pejabat.pengguna_nama}</strong></u><br>
+              NIP. ${pejabat.pengguna_nip}
             </td>
             <td class="text-center" style="vertical-align: top;">
               Banjarmasin, ${dateStr}<br>
               <strong>Pengurus Barang</strong>
               <br><br><br><br>
-              <u><strong>TRISNAWATI M ULYO HAPSARI, SE</strong></u><br>
-              NIP. 19721124 200604 2 005
+              <u><strong>${pejabat.pengurus_nama}</strong></u><br>
+              NIP. ${pejabat.pengurus_nip}
             </td>
           </tr>
         </table>
@@ -268,8 +269,9 @@ window.triggerPrintRekapSelected = function() {
         return;
     }
     
+    const pejabat = window.getPejabat();
     const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    
+
     // Group assets by room
     const rekapMap = {};
     const selectedRoomsArr = Array.from(selectedRekapRooms);
@@ -363,15 +365,15 @@ window.triggerPrintRekapSelected = function() {
               Mengetahui:<br>
               <strong>Pengguna Barang</strong>
               <br><br><br><br>
-              <u><strong>Ahmad Muzaiyin, S.Sos, M.A</strong></u><br>
-              NIP. 19740328 199311 1 001
+              <u><strong>${pejabat.pengguna_nama}</strong></u><br>
+              NIP. ${pejabat.pengguna_nip}
             </td>
             <td class="text-center" style="vertical-align: top;">
               Banjarmasin, ${dateStr}<br>
               <strong>Pengurus Barang</strong>
               <br><br><br><br>
-              <u><strong>TRISNAWATI M ULYO HAPSARI, SE</strong></u><br>
-              NIP. 19721124 200604 2 005
+              <u><strong>${pejabat.pengurus_nama}</strong></u><br>
+              NIP. ${pejabat.pengurus_nip}
             </td>
           </tr>
         </table>
@@ -390,6 +392,7 @@ window.triggerPrintRekapSelected = function() {
 };
 
 window.triggerPrintKIR = function() {
+    const pejabat = window.getPejabat();
     const roomFiltered = globalAssets.filter(a => a.ruangan === selectedRoom);
     const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     
@@ -495,15 +498,15 @@ window.triggerPrintKIR = function() {
               Mengetahui:<br>
               <strong>Pengguna Barang</strong>
               <br><br><br><br>
-              <u><strong>Ahmad Muzaiyin, S.Sos, M.A</strong></u><br>
-              NIP. 19740328 199311 1 001
+              <u><strong>${pejabat.pengguna_nama}</strong></u><br>
+              NIP. ${pejabat.pengguna_nip}
             </td>
             <td class="text-center" style="vertical-align: top;">
               Banjarmasin, ${dateStr}<br>
               <strong>Pengurus Barang</strong>
               <br><br><br><br>
-              <u><strong>TRISNAWATI M ULYO HAPSARI, SE</strong></u><br>
-              NIP. 19721124 200604 2 005
+              <u><strong>${pejabat.pengurus_nama}</strong></u><br>
+              NIP. ${pejabat.pengurus_nip}
             </td>
           </tr>
         </table>

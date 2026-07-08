@@ -334,7 +334,10 @@ window.executeBulkTransfer = async function() {
                 no_seri: bmdItem.nomor_polisi || bmdItem.nomor_rangka || '',
                 ukuran: '',
                 bahan: '',
-                tahun: bmdItem.tanggal_perolehan ? String(new Date(bmdItem.tanggal_perolehan).getFullYear()) : '',
+                // FIX: Gunakan substring(0,4) untuk ambil tahun langsung dari string ISO date.
+                // Mencegah bug timezone: new Date("2009-12-31T...Z").getFullYear() bisa return 2010
+                // di server/browser ber-timezone UTC+8 (Indonesia).
+                tahun: bmdItem.tanggal_perolehan ? String(bmdItem.tanggal_perolehan).substring(0, 4) : '',
                 jumlah: remaining,
                 harga: bmdItem.harga,
                 ruangan: ruangan,

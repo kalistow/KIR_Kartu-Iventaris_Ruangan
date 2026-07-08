@@ -55,9 +55,9 @@ let selectedRekapRooms = new Set();
 let currentBmdPage = 1;
 let bmdItemsPerPage = 50;
 
-const VIEWS = ['dashboard', 'master-bmd', 'manajemen-kir', 'non-kir', 'usul-hapus', 'riwayat-penghapusan', 'laporan', 'riwayat-sistem', 'verifikasi'];
+const VIEWS = ['dashboard', 'master-bmd', 'manajemen-kir', 'usul-hapus', 'riwayat-penghapusan', 'laporan', 'riwayat-sistem', 'verifikasi'];
 
-// Official room list
+// Official room list (semua lokasi termasuk ruangan khusus/non-KIR lama)
 let OFFICIAL_ROOMS = [
   "Ruang Kaban (Kepala Badan)",
   "Ruang Sekretaris",
@@ -72,13 +72,20 @@ let OFFICIAL_ROOMS = [
   "Ruang Kabid Ideologi",
   "Ruang Kabid Hansenibud",
   "Ruang Kabid Politik",
-  "Ruang Kabid Wasnas"
+  "Ruang Kabid Wasnas",
+  "Depan Bidang",
+  "Inventaris Kantor",
+  "Aset Non-KIR",
+  "Kendaraan Dinas",
+  "Masih Harus Dicari"
 ];
 
 function getActiveRooms(assets = globalAssets) {
     const customRooms = JSON.parse(localStorage.getItem('simbar.custom_rooms') || '[]');
     const deletedRooms = JSON.parse(localStorage.getItem('simbar.deleted_rooms') || '[]');
-    const assetRooms = [...new Set(assets.map(a => a.ruangan))].filter(r => r && r !== 'Aset Non-KIR' && r !== 'Masih Harus Dicari' && r !== 'Barang yang Dihibahkan' && r !== 'Kendaraan Dinas' && r !== 'Depan Bidang' && r !== 'Inventaris Kantor');
+    // Lokasi di luar tanggung jawab internal (seperti barang yang sudah dihibahkan/dihapus keluar)
+    const NON_OFFICE_LOCATIONS = new Set(['Barang yang Dihibahkan']);
+    const assetRooms = [...new Set(assets.map(a => a.ruangan))].filter(r => r && !NON_OFFICE_LOCATIONS.has(r));
     
     // Combine official, custom, and asset rooms (deduplicated)
     const combined = Array.from(new Set([
@@ -148,13 +155,22 @@ async function fetchRiwayat() {
         const assetName = asset ? asset.nama_barang : `Aset ID: ${r.asset_id}`;
         const formattedDate = new Date(r.tanggal).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
         
-        const assetNameEscaped = String(assetName || 'Aset').replace(/'/g, "\\'");
-        const jenisEscaped = String(r.jenis_perubahan || 'Aktivitas').replace(/'/g, "\\'");
-        
+        let badgeColorClass = 'bg-pastel-blue/20 text-blue-800 border-blue-200';
+        const jenis = r.jenis_perubahan || '';
+        if (jenis.includes('Impor') || jenis.includes('NEW')) {
+            badgeColorClass = 'bg-pastel-green/40 text-green-800 border-green-200';
+        } else if (jenis.includes('Edit') || jenis.includes('Ubah')) {
+            badgeColorClass = 'bg-pastel-blue/40 text-blue-800 border-blue-200';
+        } else if (jenis.includes('Hapus') || jenis.includes('Dieksekusi') || jenis.includes('Dimusnahkan') || jenis.includes('Dihibahkan') || jenis.includes('Dilelang')) {
+            badgeColorClass = 'bg-pastel-red/40 text-red-800 border-red-200';
+        } else if (jenis.includes('Usul') || jenis.includes('Pindah') || jenis.includes('Mutasi')) {
+            badgeColorClass = 'bg-pastel-yellow/40 text-yellow-800 border-yellow-200';
+        }
+
         tr.innerHTML = `
             <td class="py-3 px-4">${formattedDate}</td>
             <td class="py-3 px-4 font-bold text-gray-900">${assetName}</td>
-            <td class="py-3 px-4"><span class="clay-btn px-3 py-1 text-xs inline-block bg-pastel-blue/20">${r.jenis_perubahan}</span></td>
+            <td class="py-3 px-4"><span class="clay-btn px-3 py-1 text-xs inline-block ${badgeColorClass}">${r.jenis_perubahan}</span></td>
             <td class="py-3 px-4 text-xs italic text-textMuted" title="${r.keterangan || ''}">${r.keterangan || '-'}</td>
         `;
         tbody.appendChild(tr);
@@ -179,15 +195,28 @@ window.switchView = function(viewName) {
         }
     }
 
+    const iconColors = {
+        'dashboard': { active: 'text-blue-600', inactive: 'text-blue-400' },
+        'master-bmd': { active: 'text-indigo-600', inactive: 'text-indigo-400' },
+        'manajemen-kir': { active: 'text-emerald-600', inactive: 'text-emerald-400' },
+        'non-kir': { active: 'text-amber-600', inactive: 'text-amber-400' },
+        'usul-hapus': { active: 'text-rose-600', inactive: 'text-rose-400' },
+        'riwayat-penghapusan': { active: 'text-violet-600', inactive: 'text-violet-400' },
+        'laporan': { active: 'text-sky-600', inactive: 'text-sky-400' },
+        'verifikasi': { active: 'text-fuchsia-600', inactive: 'text-fuchsia-400' }
+    };
+
     VIEWS.forEach(item => {
         const btn = document.getElementById(`nav-${item}`);
         if (btn) {
+            const colors = iconColors[item] || { active: 'text-blue-600', inactive: 'text-gray-500' };
+            const svg = btn.querySelector('svg');
             if (item === viewName) {
                 btn.className = "clay-btn py-3 px-5 flex items-center gap-3 text-textMain !shadow-clay-pressed !bg-surface/80 w-full text-left";
-                btn.querySelector('svg').className.baseVal = "w-5 h-5 text-blue-600";
+                if (svg) svg.className.baseVal = `w-5 h-5 ${colors.active}`;
             } else {
                 btn.className = "clay-btn py-3 px-5 flex items-center gap-3 text-textMuted hover:text-textMain w-full text-left";
-                btn.querySelector('svg').className.baseVal = "w-5 h-5 text-gray-500";
+                if (svg) svg.className.baseVal = `w-5 h-5 ${colors.inactive}`;
             }
         }
         
@@ -202,6 +231,45 @@ window.switchView = function(viewName) {
             }
         }
     });
+
+    // Auto-expand and style parent groups based on active view
+    const isPenghapusanActive = ['usul-hapus', 'riwayat-penghapusan'].includes(viewName);
+    const isLaporanKontrolActive = ['laporan', 'verifikasi'].includes(viewName);
+
+    if (isPenghapusanActive) {
+        toggleSidebarGroup('penghapusan', 'open');
+    }
+    if (isLaporanKontrolActive) {
+        toggleSidebarGroup('laporan-kontrol', 'open');
+    }
+
+    const btnPenghapusan = document.getElementById('btn-group-penghapusan');
+    if (btnPenghapusan) {
+        const svg = btnPenghapusan.querySelector('svg');
+        if (isPenghapusanActive) {
+            btnPenghapusan.classList.add('!bg-slate-50', 'text-textMain');
+            btnPenghapusan.classList.remove('text-textMuted');
+            if (svg) svg.className.baseVal = "w-5 h-5 text-rose-600";
+        } else {
+            btnPenghapusan.classList.remove('!bg-slate-50', 'text-textMain');
+            btnPenghapusan.classList.add('text-textMuted');
+            if (svg) svg.className.baseVal = "w-5 h-5 text-rose-400";
+        }
+    }
+
+    const btnLaporanKontrol = document.getElementById('btn-group-laporan-kontrol');
+    if (btnLaporanKontrol) {
+        const svg = btnLaporanKontrol.querySelector('svg');
+        if (isLaporanKontrolActive) {
+            btnLaporanKontrol.classList.add('!bg-slate-50', 'text-textMain');
+            btnLaporanKontrol.classList.remove('text-textMuted');
+            if (svg) svg.className.baseVal = "w-5 h-5 text-sky-600";
+        } else {
+            btnLaporanKontrol.classList.remove('!bg-slate-50', 'text-textMain');
+            btnLaporanKontrol.classList.add('text-textMuted');
+            if (svg) svg.className.baseVal = "w-5 h-5 text-sky-400";
+        }
+    }
 
     // Update Header Text
     const title = document.getElementById('header-title');
@@ -274,6 +342,7 @@ supabaseClient
 
 document.addEventListener('DOMContentLoaded', () => {
     loadAllData();
+    switchView(currentView);
     
     // Listen to AI toggle checkbox to show/hide API key input wrapper
     document.getElementById('use-gemini-ai')?.addEventListener('change', (e) => {
@@ -327,6 +396,16 @@ window.populateAllRoomSelects = function() {
 window.populateRoomSelects = function() {
     const rooms = getActiveRooms(globalAssets);
     
+    // Tentukan pemetaan nama representatif kategori khusus (tanpa emoji)
+    const SPECIAL_ROOM_MAP = {
+        'Aset Non-KIR': 'Aset Cadangan (Gudang)',
+        'Kendaraan Dinas': 'Kendaraan Dinas (Operasional)',
+        'Masih Harus Dicari': 'Masih Harus Dicari (Pelacakan)'
+    };
+    
+    const physicalRooms = rooms.filter(r => !SPECIAL_ROOM_MAP[r]);
+    const specialRooms = rooms.filter(r => SPECIAL_ROOM_MAP[r]);
+    
     // 1. Populate standard selectors
     const standardSelects = ['kir-room-select', 'rekap-rooms', 'bulk-ruangan', 'map-ruangan'];
     standardSelects.forEach(id => {
@@ -334,18 +413,36 @@ window.populateRoomSelects = function() {
         if (!select) return;
         const currentVal = select.value;
         select.innerHTML = '';
-        rooms.forEach(r => {
+        
+        // Group 1: Ruangan Fisik
+        const groupPhysical = document.createElement('optgroup');
+        groupPhysical.label = 'RUANGAN KANTOR (FISIK)';
+        physicalRooms.forEach(r => {
             const opt = document.createElement('option');
             opt.value = r;
             opt.textContent = r;
-            select.appendChild(opt);
+            groupPhysical.appendChild(opt);
         });
+        select.appendChild(groupPhysical);
         
-        // Append special options for map-ruangan
+        // Group 2: Kategori Khusus
+        if (specialRooms.length > 0) {
+            const groupSpecial = document.createElement('optgroup');
+            groupSpecial.label = 'KATEGORI KHUSUS / LUAR RUANG';
+            specialRooms.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r;
+                opt.textContent = SPECIAL_ROOM_MAP[r] || r;
+                groupSpecial.appendChild(opt);
+            });
+            select.appendChild(groupSpecial);
+        }
+        
+        // Append special options untuk map-ruangan
         if (id === 'map-ruangan') {
             const specialOpt = document.createElement('option');
             specialOpt.value = '__DATA_INDUK__';
-            specialOpt.textContent = '📦 Kembalikan ke Data Induk (Master)';
+            specialOpt.textContent = 'Kembalikan ke Data Induk (Master)';
             specialOpt.style.backgroundColor = '#e9d5ff';
             specialOpt.style.color = '#6b21a8';
             specialOpt.style.fontWeight = 'bold';
@@ -359,44 +456,175 @@ window.populateRoomSelects = function() {
         }
     });
     
-    // 2. Populate edit-ruangan selector (which has more special options)
+    // 2. Populate edit-ruangan selector
     const editSelect = document.getElementById('edit-ruangan');
     if (editSelect) {
         const currentVal = editSelect.value;
         editSelect.innerHTML = '';
         
-        // Add active rooms
-        rooms.forEach(r => {
+        // Group 1: Ruangan Fisik
+        const groupPhysical = document.createElement('optgroup');
+        groupPhysical.label = 'RUANGAN KANTOR (FISIK)';
+        physicalRooms.forEach(r => {
             const opt = document.createElement('option');
             opt.value = r;
             opt.textContent = r;
-            editSelect.appendChild(opt);
+            groupPhysical.appendChild(opt);
         });
+        editSelect.appendChild(groupPhysical);
         
-        // Add special options
-        const specialOptions = [
-            { value: 'Kendaraan Dinas', text: '[Spesial] Kendaraan Dinas', bg: '#fee2e2', fg: '#991b1b' },
-            { value: 'Inventaris Kantor', text: '[Spesial] Inventaris Umum & Koridor', bg: '#e0e7ff', fg: '#3730a3' },
-            { value: 'Aset Non-KIR', text: '[Spesial] Aset Cadangan (Gudang)', bg: '#dbeafe', fg: '#1e40af' },
-            { value: 'Masih Harus Dicari', text: '[Spesial] Masih Harus Dicari (Pencarian)', bg: '#fef3c7', fg: '#92400e' },
-            { value: '__DATA_INDUK__', text: '[Aksi] Kembalikan ke Data Induk (Master)', bg: '#e9d5ff', fg: '#6b21a8' }
-        ];
-        
-        specialOptions.forEach(optData => {
+        // Group 2: Kategori Khusus
+        const groupSpecial = document.createElement('optgroup');
+        groupSpecial.label = 'KATEGORI KHUSUS / LUAR RUANG';
+        specialRooms.forEach(r => {
             const opt = document.createElement('option');
-            opt.value = optData.value;
-            opt.textContent = optData.text;
-            opt.style.backgroundColor = optData.bg;
-            opt.style.color = optData.fg;
-            opt.style.fontWeight = 'bold';
-            editSelect.appendChild(opt);
+            opt.value = r;
+            opt.textContent = SPECIAL_ROOM_MAP[r] || r;
+            groupSpecial.appendChild(opt);
         });
+        editSelect.appendChild(groupSpecial);
+        
+        // Add action option
+        const optMaster = document.createElement('option');
+        optMaster.value = '__DATA_INDUK__';
+        optMaster.textContent = '[Aksi] Kembalikan ke Data Induk (Master)';
+        optMaster.style.backgroundColor = '#e9d5ff';
+        optMaster.style.color = '#6b21a8';
+        optMaster.style.fontWeight = 'bold';
+        editSelect.appendChild(optMaster);
         
         if (currentVal) {
             editSelect.value = currentVal;
         }
     }
+    
+    // 3. Render Custom Dropdown UI Facade
+    renderCustomRoomDropdown(physicalRooms, specialRooms, SPECIAL_ROOM_MAP);
 };
+
+// Logika rendering & kontrol custom dropdown
+const CUSTOM_ROOM_ICONS = {
+    'office': `<svg class="w-5 h-5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>`,
+    'Aset Non-KIR': `<svg class="w-5 h-5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>`,
+    'Kendaraan Dinas': `<svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1"></path></svg>`,
+    'Masih Harus Dicari': `<svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>`
+};
+
+function renderCustomRoomDropdown(physicalRooms, specialRooms, nameMap) {
+    const listPhysical = document.getElementById('custom-room-physical-list');
+    const listSpecial = document.getElementById('custom-room-special-list');
+    const nativeSelect = document.getElementById('kir-room-select');
+    
+    if (!listPhysical || !listSpecial || !nativeSelect) return;
+    
+    listPhysical.innerHTML = '';
+    listSpecial.innerHTML = '';
+    
+    const activeVal = nativeSelect.value;
+    
+    // Helper untuk membuat item dropdown
+    const createItem = (value, displayName, iconHtml) => {
+        const div = document.createElement('div');
+        const isActive = value === activeVal;
+        
+        div.className = `flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm font-bold ${
+            isActive 
+                ? 'bg-blue-100/80 text-blue-900 shadow-sm border border-blue-200/50' 
+                : 'text-textMain hover:bg-slate-100 hover:text-blue-950'
+        }`;
+        
+        div.innerHTML = `
+            ${iconHtml}
+            <span class="flex-1">${displayName}</span>
+            ${isActive ? `<svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>` : ''}
+        `;
+        
+        div.onclick = () => {
+            selectCustomRoom(value, displayName, iconHtml);
+        };
+        return div;
+    };
+    
+    // 1. Render Ruangan Fisik
+    physicalRooms.forEach(r => {
+        const item = createItem(r, r, CUSTOM_ROOM_ICONS['office']);
+        listPhysical.appendChild(item);
+    });
+    
+    // 2. Render Kategori Khusus
+    specialRooms.forEach(r => {
+        const iconHtml = CUSTOM_ROOM_ICONS[r] || CUSTOM_ROOM_ICONS['office'];
+        const displayName = nameMap[r] ? nameMap[r].replace(/^[^\s]+\s*/, '') : r; // Bersihkan emoji awalan jika ada
+        const item = createItem(r, displayName, iconHtml);
+        listSpecial.appendChild(item);
+    });
+    
+    // 3. Set label terpilih pada tombol utama saat pertama load/sync
+    const currentOption = nativeSelect.options[nativeSelect.selectedIndex];
+    if (currentOption) {
+        const rawVal = currentOption.value;
+        const displayName = nameMap[rawVal] ? nameMap[rawVal].replace(/^[^\s]+\s*/, '') : rawVal;
+        const iconHtml = CUSTOM_ROOM_ICONS[rawVal] || CUSTOM_ROOM_ICONS['office'];
+        
+        const labelContainer = document.getElementById('custom-room-dropdown-selected-label');
+        if (labelContainer) {
+            labelContainer.innerHTML = `${iconHtml}<span>${displayName}</span>`;
+        }
+    }
+}
+
+window.toggleCustomRoomDropdown = function() {
+    const menu = document.getElementById('custom-room-dropdown-menu');
+    const chevron = document.getElementById('custom-room-dropdown-chevron');
+    if (!menu) return;
+    
+    const isHidden = menu.classList.contains('hidden');
+    if (isHidden) {
+        menu.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
+    } else {
+        menu.classList.add('hidden');
+        if (chevron) chevron.classList.remove('rotate-180');
+    }
+};
+
+window.selectCustomRoom = function(value, displayName, iconHtml) {
+    const nativeSelect = document.getElementById('kir-room-select');
+    if (!nativeSelect) return;
+    
+    nativeSelect.value = value;
+    
+    // Trigger onchange event pada select native
+    const event = new Event('change');
+    nativeSelect.dispatchEvent(event);
+    
+    // Update label utama tombol
+    const labelContainer = document.getElementById('custom-room-dropdown-selected-label');
+    if (labelContainer) {
+        labelContainer.innerHTML = `${iconHtml}<span>${displayName}</span>`;
+    }
+    
+    // Tutup menu dropdown
+    const menu = document.getElementById('custom-room-dropdown-menu');
+    const chevron = document.getElementById('custom-room-dropdown-chevron');
+    if (menu) menu.classList.add('hidden');
+    if (chevron) chevron.classList.remove('rotate-180');
+    
+    // Render ulang list untuk memperbarui status active item centang
+    populateRoomSelects();
+};
+
+// Tutup dropdown jika mengklik di luar area container
+document.addEventListener('click', (e) => {
+    const container = document.getElementById('custom-room-dropdown-container');
+    const menu = document.getElementById('custom-room-dropdown-menu');
+    const chevron = document.getElementById('custom-room-dropdown-chevron');
+    
+    if (container && !container.contains(e.target) && menu && !menu.classList.contains('hidden')) {
+        menu.classList.add('hidden');
+        if (chevron) chevron.classList.remove('rotate-180');
+    }
+});
 
 window.updateNonKirTabUI = function() {
     const tabs = ['non-kir', 'kendaraan', 'umum', 'search', 'gift'];
@@ -424,5 +652,31 @@ window.logoutAdmin = async function() {
     } catch (err) {
         console.error('Error saat logout:', err);
         window.location.href = 'login.html';
+    }
+};
+
+window.toggleSidebarGroup = function(groupId, forceState) {
+    const subGroup = document.getElementById(`sub-group-${groupId}`);
+    const chevron = document.getElementById(`chevron-group-${groupId}`);
+    if (!subGroup) return;
+    
+    let isHidden = subGroup.classList.contains('hidden');
+    
+    if (forceState === 'open') {
+        isHidden = true; // force remove hidden
+    } else if (forceState === 'close') {
+        isHidden = false; // force add hidden
+    }
+    
+    if (isHidden) {
+        subGroup.classList.remove('hidden');
+        if (chevron) {
+            chevron.classList.add('rotate-180');
+        }
+    } else {
+        subGroup.classList.add('hidden');
+        if (chevron) {
+            chevron.classList.remove('rotate-180');
+        }
     }
 };
