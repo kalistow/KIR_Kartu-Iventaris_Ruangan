@@ -201,3 +201,6 @@ async function processCancelUsulHapus(ids) {
         showToast('Gagal membatalkan usulan: ' + err.message, 'error');
     }
 }
+
+// Ekspos fungsi ke global scope
+window.renderUsulHapusTable = renderUsulHapusTable;

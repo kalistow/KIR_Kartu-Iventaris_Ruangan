@@ -223,5 +223,11 @@ window.handleSearchRiwayatPenghapusan = function() {
     renderRiwayatPenghapusanTable(globalAssets);
 };
 
+// Ekspos fungsi ke global scope
+window.renderRiwayatPenghapusanTable = renderRiwayatPenghapusanTable;
+
 // Initialize UI
 updateRiwayatPenghapusanTabUI();
+if (typeof globalAssets !== 'undefined' && globalAssets.length > 0) {
+    renderRiwayatPenghapusanTable(globalAssets);
+}
