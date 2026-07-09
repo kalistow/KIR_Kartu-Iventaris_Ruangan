@@ -263,8 +263,8 @@ function _vqRenderCard(item) {
     return `
     <div id="vq-card-${item.id}" class="clay-panel p-0 overflow-hidden border ${borderClass} transition-all ${isSelected ? 'ring-2 ring-blue-400' : ''}">
         <!-- Card Header -->
-        <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50/70">
-            <div class="flex items-center gap-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-5 py-3.5 border-b border-slate-200 bg-slate-50/70">
+            <div class="flex items-center gap-3 flex-wrap">
                 ${showCheckbox ? `
                 <input type="checkbox" onchange="vqToggleSelect(${item.id})" ${isSelected ? 'checked' : ''}
                     class="w-4 h-4 rounded accent-blue-600 cursor-pointer flex-shrink-0">` : ''}
@@ -278,8 +278,8 @@ function _vqRenderCard(item) {
             </div>
         </div>
 
-        <!-- Side-by-side Comparison -->
-        <div class="grid grid-cols-2 divide-x divide-slate-200">
+        <!-- Side-by-side Comparison (stacks vertically on mobile, side-by-side from sm breakpoint up) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
             <!-- Incoming (Data Baru dari Excel) -->
             <div class="p-5">
                 <div class="flex items-center gap-2 mb-3">
@@ -482,7 +482,7 @@ window.loadImportSessions = async function() {
                              : session.status === 'PARTIAL' ? 'text-yellow-700 bg-yellow-50 border-yellow-200'
                              : 'text-blue-700 bg-blue-50 border-blue-200';
             return `
-            <div class="flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all cursor-pointer group"
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all cursor-pointer group"
                 onclick="loadVerificationQueue('${session.id}'); vqSetFilter('REVIEW')">
                 <div class="flex items-center gap-3 flex-1 min-w-0">
                     <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${session.file_type === 'BMD' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">
@@ -493,8 +493,8 @@ window.loadImportSessions = async function() {
                         <p class="text-xs text-textMuted font-bold">${date} · ${session.file_type}</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 flex-shrink-0 ml-3">
-                    <div class="grid grid-cols-4 gap-1.5 text-center">
+                <div class="flex items-center justify-between sm:justify-end gap-2 flex-shrink-0 sm:ml-3 pl-12 sm:pl-0">
+                    <div class="grid grid-cols-4 gap-1.5 text-center flex-1 sm:flex-initial">
                         <div title="Auto-match" class="px-2 py-1 rounded-lg bg-green-50 border border-green-200">
                             <p class="text-xs font-black text-green-700">${session.matched_auto || 0}</p>
                             <p class="text-[9px] text-green-600 font-bold">Auto</p>
@@ -512,8 +512,8 @@ window.loadImportSessions = async function() {
                             <p class="text-[9px] text-red-600 font-bold">Hilang</p>
                         </div>
                     </div>
-                    <span class="text-[10px] font-extrabold px-2 py-1 rounded-full border ${statusColor}">${session.status}</span>
-                    <svg class="w-4 h-4 text-textMuted group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span class="text-[10px] font-extrabold px-2 py-1 rounded-full border ${statusColor} flex-shrink-0">${session.status}</span>
+                    <svg class="w-4 h-4 text-textMuted group-hover:text-blue-500 transition-colors flex-shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
                     </svg>
                 </div>

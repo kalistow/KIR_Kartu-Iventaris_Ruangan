@@ -49,11 +49,8 @@ function renderRiwayatPenghapusanTable(assets) {
     updateRiwayatPenghapusanTabUI();
 
     const tbody = document.getElementById('riwayat-penghapusan-tbody');
-    const mobileList = document.getElementById('riwayat-penghapusan-mobile-list');
     if (!tbody) return;
-    
     tbody.innerHTML = '';
-    if (mobileList) mobileList.innerHTML = '';
     
     let filteredAssets = assets.filter(a => a.status === currentRiwayatPenghapusanTab);
     
@@ -82,16 +79,13 @@ function renderRiwayatPenghapusanTable(assets) {
 
     if (filteredAssets.length === 0) {
         tbody.innerHTML = `<tr><td colspan="11" class="text-center py-10 text-textMuted">${emptyMsg}</td></tr>`;
-        if (mobileList) {
-            mobileList.innerHTML = `<div class="text-center py-10 text-textMuted font-bold">${emptyMsg}</div>`;
-        }
         return;
     }
     
     filteredAssets.forEach((a, index) => {
-        // Table row for Desktop
         const tr = document.createElement('tr');
         tr.className = 'border-b border-white/30 hover:bg-white/20 transition-colors';
+        
         tr.innerHTML = `
             <td class="py-4 px-4 whitespace-nowrap text-center">${index + 1}</td>
             <td class="py-4 px-4 whitespace-nowrap">${a.kode_barang || '-'}</td>
@@ -111,56 +105,6 @@ function renderRiwayatPenghapusanTable(assets) {
             </td>
         `;
         tbody.appendChild(tr);
-
-        // Card element for Mobile
-        if (mobileList) {
-            const card = document.createElement('div');
-            card.className = 'clay-panel p-5 bg-white/80 border border-slate-200 rounded-2xl shadow-sm space-y-3';
-            card.innerHTML = `
-                <div class="flex justify-between items-start border-b border-slate-100 pb-2">
-                    <div>
-                        <span class="text-xs text-textMuted font-mono">No. Urut: ${index + 1}</span>
-                        <h4 class="font-extrabold text-slate-900 text-base mt-0.5">${a.nama_barang || '-'}</h4>
-                    </div>
-                    <div>
-                        ${badgeHtml}
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3 text-xs font-bold text-slate-700">
-                    <div>
-                        <p class="text-[10px] text-textMuted uppercase tracking-wider">Kode Barang</p>
-                        <p class="font-mono text-slate-900">${a.kode_barang || '-'}</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-textMuted uppercase tracking-wider">Ruangan / Kategori</p>
-                        <p class="text-slate-900">${a.ruangan || '-'}</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-textMuted uppercase tracking-wider">Merk / Tipe</p>
-                        <p class="text-slate-900">${a.merk_model || '-'}</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-textMuted uppercase tracking-wider">No. Seri Pabrik</p>
-                        <p class="text-slate-900">${a.no_seri || '-'}</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-textMuted uppercase tracking-wider">Tahun / Jumlah</p>
-                        <p class="text-slate-900">${a.tahun || '-'} / ${a.jumlah || 1} unit</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] text-textMuted uppercase tracking-wider">Harga Beli</p>
-                        <p class="text-blue-900 font-extrabold">Rp ${fmt(a.harga)}</p>
-                    </div>
-                </div>
-                <div class="pt-2 border-t border-slate-100 flex justify-end">
-                    <button onclick="openRiwayatSistem('${a.id}')" class="clay-btn px-4 py-2.5 flex items-center justify-center gap-2 text-slate-700 hover:text-slate-900 font-extrabold text-xs w-full">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Histori Aktivitas
-                    </button>
-                </div>
-            `;
-            mobileList.appendChild(card);
-        }
     });
 }
 
@@ -197,9 +141,10 @@ window.triggerPrintRiwayatPenghapusan = function() {
     <html lang="id">
     <head>
       <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Cetak Riwayat Penghapusan - ${currentRiwayatPenghapusanTab}</title>
       <style>
-        body { font-family: 'Times New Roman', serif; padding: 20px; line-height: 1.2; font-size: 10px; }
+        body { font-family: 'Times New Roman', serif; padding: 20px; line-height: 1.2; font-size: 10px; overflow-x: auto; }
         h3 { text-align: center; margin: 2px 0; font-size: 14px; text-transform: uppercase; }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
