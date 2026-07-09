@@ -78,7 +78,7 @@ function renderRiwayatPenghapusanTable(assets) {
     }
 
     if (filteredAssets.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-10 text-textMuted">${emptyMsg}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-10 text-textMuted">${emptyMsg}</td></tr>`;
         return;
     }
     
@@ -90,6 +90,7 @@ function renderRiwayatPenghapusanTable(assets) {
             <td class="py-4 px-4 whitespace-nowrap text-center">${index + 1}</td>
             <td class="py-4 px-4 whitespace-nowrap">${a.kode_barang || '-'}</td>
             <td class="py-4 px-4 font-extrabold text-gray-900">${a.nama_barang || '-'}</td>
+            <td class="py-4 px-4 text-left text-gray-800 font-bold">${a.ruangan || '-'}</td>
             <td class="py-4 px-4 text-textMuted">${a.merk_model || '-'}</td>
             <td class="py-4 px-4">${a.no_seri || '-'}</td>
             <td class="py-4 px-4 text-center">${a.tahun || '-'}</td>
@@ -156,7 +157,10 @@ window.triggerPrintRiwayatPenghapusan = function() {
         .footer-sig td { border: none !important; width: 50%; padding: 5px; font-size: 12px; }
         @media print {
            @page { size: landscape; margin: 1cm; }
-           body { padding: 0; }
+           body { padding: 0; margin: 0; }
+           tr { break-inside: avoid; }
+           thead { display: table-header-group; break-inside: avoid; }
+           .footer-sig { break-inside: avoid; }
         }
       </style>
     </head>
@@ -179,13 +183,14 @@ window.triggerPrintRiwayatPenghapusan = function() {
         <thead>
           <tr>
             <th style="width: 4%;">No.</th>
-            <th style="width: 14%;">Kode Barang</th>
-            <th style="width: 25%;">Nama/Jenis Barang</th>
-            <th style="width: 20%;">Merk/Model</th>
-            <th style="width: 13%;">No. Seri Pabrik</th>
-            <th style="width: 6%;">Tahun</th>
-            <th style="width: 6%;">Jumlah</th>
-            <th style="width: 12%;">Harga Beli (Rp)</th>
+            <th style="width: 12%;">Kode Barang</th>
+            <th style="width: 22%;">Nama/Jenis Barang</th>
+            <th style="width: 13%;">Ruangan/Kategori</th>
+            <th style="width: 17%;">Merk/Model</th>
+            <th style="width: 11%;">No. Seri Pabrik</th>
+            <th style="width: 5%;">Tahun</th>
+            <th style="width: 5%;">Jumlah</th>
+            <th style="width: 11%;">Harga Beli (Rp)</th>
           </tr>
         </thead>
         <tbody>
@@ -194,6 +199,7 @@ window.triggerPrintRiwayatPenghapusan = function() {
               <td class="text-center">${i + 1}</td>
               <td class="text-center">${a.kode_barang || '-'}</td>
               <td><strong>${a.nama_barang || '-'}</strong></td>
+              <td>${a.ruangan || '-'}</td>
               <td>${a.merk_model || '-'}</td>
               <td class="text-center">${a.no_seri || '-'}</td>
               <td class="text-center">${a.tahun || '-'}</td>
@@ -202,7 +208,7 @@ window.triggerPrintRiwayatPenghapusan = function() {
             </tr>
           `).join('')}
           <tr style="font-weight: bold; background-color: #e5e5e5;">
-            <td colspan="6" class="text-right">TOTAL:</td>
+            <td colspan="7" class="text-right">TOTAL:</td>
             <td class="text-center">${filteredAssets.reduce((sum, a) => sum + (a.jumlah || 1), 0)}</td>
             <td class="text-right">Rp ${fmt(filteredAssets.reduce((sum, a) => sum + ((a.harga || 0) * (a.jumlah || 1)), 0))}</td>
           </tr>
@@ -231,8 +237,12 @@ window.triggerPrintRiwayatPenghapusan = function() {
       </div>
       
       <script>
-        window.print();
-        window.onafterprint = function() { window.close(); };
+        window.onload = function() {
+          window.print();
+        };
+        window.onafterprint = function() {
+          window.close();
+        };
       </script>
     </body>
     </html>

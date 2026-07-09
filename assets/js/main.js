@@ -168,10 +168,10 @@ async function fetchRiwayat() {
         }
 
         tr.innerHTML = `
-            <td class="py-3 px-4">${formattedDate}</td>
-            <td class="py-3 px-4 font-bold text-gray-900">${assetName}</td>
-            <td class="py-3 px-4"><span class="clay-btn px-3 py-1 text-xs inline-block ${badgeColorClass}">${r.jenis_perubahan}</span></td>
-            <td class="py-3 px-4 text-xs italic text-textMuted" title="${r.keterangan || ''}">${r.keterangan || '-'}</td>
+            <td class="py-2 px-2 whitespace-nowrap text-xs">${formattedDate}</td>
+            <td class="py-2 px-2 font-bold text-gray-900 text-xs max-w-[120px] truncate" title="${assetName}">${assetName}</td>
+            <td class="py-2 px-2 whitespace-nowrap text-center"><span class="clay-btn px-2 py-0.5 text-[10px] inline-block ${badgeColorClass}">${r.jenis_perubahan}</span></td>
+            <td class="py-2 px-2 text-xs italic text-textMuted max-w-[150px] truncate" title="${r.keterangan || ''}">${r.keterangan || '-'}</td>
         `;
         tbody.appendChild(tr);
     });

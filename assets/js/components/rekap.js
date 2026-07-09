@@ -187,6 +187,13 @@ window.triggerPrintRekap = function() {
         .footer-sig { width: 100%; margin-top: 40px; }
         .footer-sig table { border: none !important; width: 100%; }
         .footer-sig td { border: none !important; width: 50%; padding: 5px; }
+        @media print {
+          @page { size: portrait; margin: 1.5cm 1cm 1.5cm 1cm; }
+          body { padding: 0; margin: 0; background-color: #fff; }
+          tr { break-inside: avoid; }
+          thead { display: table-header-group; break-inside: avoid; }
+          .footer-sig { break-inside: avoid; }
+        }
       </style>
     </head>
     <body>
@@ -254,8 +261,12 @@ window.triggerPrintRekap = function() {
       </div>
       
       <script>
-        window.print();
-        window.onafterprint = function() { window.close(); };
+        window.onload = function() {
+          window.print();
+        };
+        window.onafterprint = function() {
+          window.close();
+        };
       </script>
     </body>
     </html>
@@ -312,6 +323,13 @@ window.triggerPrintRekapSelected = function() {
         .footer-sig { width: 100%; margin-top: 40px; }
         .footer-sig table { border: none !important; width: 100%; }
         .footer-sig td { border: none !important; width: 50%; padding: 5px; }
+        @media print {
+          @page { size: portrait; margin: 1.5cm 1cm 1.5cm 1cm; }
+          body { padding: 0; margin: 0; background-color: #fff; }
+          tr { break-inside: avoid; }
+          thead { display: table-header-group; break-inside: avoid; }
+          .footer-sig { break-inside: avoid; }
+        }
       </style>
     </head>
     <body>
@@ -382,7 +400,9 @@ window.triggerPrintRekapSelected = function() {
       <script>
         window.onload = function() {
           window.print();
-          setTimeout(function() { window.close(); }, 500);
+        };
+        window.onafterprint = function() {
+          window.close();
         };
       </script>
     </body>
@@ -418,7 +438,10 @@ window.triggerPrintKIR = function() {
         .footer-sig td { border: none !important; width: 50%; padding: 5px; font-size: 12px; }
         @media print {
            @page { size: landscape; margin: 1cm; }
-           body { padding: 0; }
+           body { padding: 0; margin: 0; }
+           tr { break-inside: avoid; }
+           thead { display: table-header-group; break-inside: avoid; }
+           .footer-sig { break-inside: avoid; }
         }
       </style>
     </head>
@@ -513,8 +536,12 @@ window.triggerPrintKIR = function() {
       </div>
       
       <script>
-        window.print();
-        window.onafterprint = function() { window.close(); };
+        window.onload = function() {
+          window.print();
+        };
+        window.onafterprint = function() {
+          window.close();
+        };
       </script>
     </body>
     </html>

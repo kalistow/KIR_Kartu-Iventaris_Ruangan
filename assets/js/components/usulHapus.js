@@ -23,7 +23,7 @@ function renderUsulHapusTable(assets) {
     );
     
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="14" class="text-center py-10 text-textMuted">Tidak ada data usul penghapusan.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="15" class="text-center py-10 text-textMuted">Tidak ada data usul penghapusan.</td></tr>';
         updateUsulHapusBulkButton();
         return;
     }
@@ -38,6 +38,7 @@ function renderUsulHapusTable(assets) {
             <td class="py-4 px-4 whitespace-nowrap text-center">${index + 1}</td>
             <td class="py-4 px-4 whitespace-nowrap">${a.kode_barang || '-'}</td>
             <td class="py-4 px-4 font-extrabold text-gray-900">${a.nama_barang || '-'}</td>
+            <td class="py-4 px-4 text-left text-gray-800 font-bold">${a.ruangan || '-'}</td>
             <td class="py-4 px-4 text-textMuted">${a.merk_model || '-'}</td>
             <td class="py-4 px-4">${a.no_seri || '-'}</td>
             <td class="py-4 px-4">${a.ukuran || '-'}</td>
