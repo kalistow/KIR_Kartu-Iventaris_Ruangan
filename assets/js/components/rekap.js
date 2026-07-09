@@ -148,6 +148,7 @@ window.updateRekapButtonsState = function() {
 window.triggerPrintRekap = function() {
     const pejabat = window.getPejabat();
     const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const currentYear = new Date().getFullYear();
     
     // Group assets by room
     const rekapMap = {};
@@ -199,7 +200,7 @@ window.triggerPrintRekap = function() {
     <body>
       <h2>LAPORAN REKAPITULASI ASET KARTU INVENTARIS RUANGAN (KIR)</h2>
       <h3>BADAN KESATUAN BANGSA DAN POLITIK KOTA BANJARMASIN</h3>
-      <h3 style="margin-bottom: 20px;">TAHUN ANGGARAN 2026</h3>
+      <h3 style="margin-bottom: 20px;">TAHUN ANGGARAN ${currentYear}</h3>
 
       <table>
         <thead>
@@ -282,6 +283,7 @@ window.triggerPrintRekapSelected = function() {
     
     const pejabat = window.getPejabat();
     const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const currentYear = new Date().getFullYear();
 
     // Group assets by room
     const rekapMap = {};
@@ -335,7 +337,7 @@ window.triggerPrintRekapSelected = function() {
     <body>
       <h2>LAPORAN REKAPITULASI ASET KARTU INVENTARIS RUANGAN (KIR)</h2>
       <h3>BADAN KESATUAN BANGSA DAN POLITIK KOTA BANJARMASIN</h3>
-      <h3 style="margin-bottom: 20px;">TAHUN ANGGARAN 2026</h3>
+      <h3 style="margin-bottom: 20px;">TAHUN ANGGARAN ${currentYear}</h3>
       <p style="font-weight: bold; margin-bottom: 10px; font-style: italic;">Laporan Rekapitulasi untuk Ruangan Terpilih</p>
 
       <table>
@@ -415,6 +417,7 @@ window.triggerPrintKIR = function() {
     const pejabat = window.getPejabat();
     const roomFiltered = globalAssets.filter(a => a.ruangan === selectedRoom);
     const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const currentYear = new Date().getFullYear();
     
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
@@ -456,7 +459,7 @@ window.triggerPrintKIR = function() {
         </tr>
         <tr>
           <td>Ruangan</td><td>:</td><td>${selectedRoom}</td>
-          <td>Tahun</td><td>:</td><td>2026</td>
+          <td>Tahun</td><td>:</td><td>${currentYear}</td>
         </tr>
       </table>
 
