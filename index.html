@@ -104,10 +104,21 @@
     </style>
 </head>
 
-<body class="min-h-screen flex p-6 gap-8 box-border selection:bg-blue-200 selection:text-blue-900">
+<body class="min-h-screen flex flex-col lg:flex-row p-3 sm:p-4 lg:p-6 gap-4 lg:gap-8 box-border selection:bg-blue-200 selection:text-blue-900">
 
-    <!-- Floating Sidebar -->
-    <aside class="clay-panel w-72 flex-shrink-0 flex flex-col p-6 h-[calc(100vh-3rem)] sticky top-6 z-10">
+    <!-- Mobile overlay (shown behind sidebar when it's open on mobile/tablet) -->
+    <div id="sidebar-overlay" onclick="toggleSidebar('close')"
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 hidden lg:hidden transition-opacity duration-300"></div>
+
+    <!-- Floating Sidebar (off-canvas drawer on mobile, static panel on desktop/lg+) -->
+    <aside id="sidebar"
+        class="clay-panel w-72 max-w-[85vw] flex-shrink-0 flex flex-col p-6 h-screen lg:h-[calc(100vh-3rem)] fixed lg:sticky inset-y-0 lg:inset-y-auto left-0 top-0 lg:top-6 z-40 -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto">
+        <button onclick="toggleSidebar('close')" aria-label="Tutup menu"
+            class="lg:hidden absolute top-4 right-4 w-9 h-9 clay-btn flex items-center justify-center text-textMuted !shadow-clay-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
         <div class="flex items-center gap-4 mb-10">
             <div class="w-14 h-14 rounded-full shadow-clay-sm flex items-center justify-center bg-surface overflow-hidden">
                 <img src="assets/images/logo-kesbangpol.png" alt="Logo Kesbangpol" class="w-full h-full object-contain p-0.5">
@@ -245,14 +256,22 @@
     </aside>
 
     <!-- Main Content Area -->
-    <main class="flex-1 flex flex-col gap-8 h-[calc(100vh-3rem)] overflow-y-auto pr-2 pb-6 relative z-0">
+    <main class="flex-1 flex flex-col gap-4 lg:gap-8 lg:h-[calc(100vh-3rem)] lg:overflow-y-auto lg:pr-2 pb-6 relative z-0">
 
         <!-- Header -->
-        <header class="clay-panel p-6 px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-                <h2 id="header-title" class="text-3xl font-black text-textMain tracking-tight">Dashboard Inventaris</h2>
-                <p id="header-desc" class="text-textMuted font-bold mt-1 text-sm">Ringkasan data Barang Milik Daerah
-                    (BMD) dan Kartu Inventaris Ruangan (KIR)</p>
+        <header class="clay-panel p-4 sm:p-6 px-4 sm:px-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                <button onclick="toggleSidebar('open')" aria-label="Buka menu"
+                    class="lg:hidden clay-btn w-11 h-11 flex-shrink-0 flex items-center justify-center text-textMain !shadow-clay-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <div>
+                    <h2 id="header-title" class="text-xl sm:text-2xl lg:text-3xl font-black text-textMain tracking-tight">Dashboard Inventaris</h2>
+                    <p id="header-desc" class="text-textMuted font-bold mt-1 text-xs sm:text-sm">Ringkasan data Barang Milik Daerah
+                        (BMD) dan Kartu Inventaris Ruangan (KIR)</p>
+                </div>
             </div>
             <button id="import-btn-header" onclick="openImportModal()"
                 class="clay-btn px-6 py-3.5 flex items-center gap-3 text-blue-700 bg-pastel-blue/30 hidden">
@@ -1202,7 +1221,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
     <div id="edit-modal"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
         <div
-            class="clay-panel w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            class="clay-panel w-full max-w-2xl mx-3 sm:mx-4 max-h-[90vh] overflow-y-auto p-4 sm:p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
             <button onclick="closeEditModal()"
                 class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1373,7 +1392,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
     <div id="add-asset-modal"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
         <div
-            class="clay-panel w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            class="clay-panel w-full max-w-2xl mx-3 sm:mx-4 max-h-[90vh] overflow-y-auto p-4 sm:p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
             <button onclick="closeAddAssetModal()"
                 class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1612,7 +1631,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
                 <div class="bg-blue-50/50 p-5 rounded-[2rem] border border-blue-200/50 text-center">
                     <p class="text-sm text-blue-900 font-extrabold flex items-center justify-center gap-2">
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1v1H9V7zm5 0h1v1h-1V7zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1zm-5 4h1v1H9v-1zm5 0h1v1h-1v-1z"></path></svg>
-                        Sinkronisasi Master BMD Terbaru
+                        Sinkronisasi Master BMD Terbaru (2026)
                     </p>
                     <p class="text-xs text-textMuted mt-1">Mengunggah file Excel Master BMD untuk memperbarui status dan penempatan barang secara otomatis.</p>
                 </div>
@@ -1892,7 +1911,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
     <div id="bulk-transfer-modal"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
         <div
-            class="clay-panel w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            class="clay-panel w-full max-w-2xl mx-3 sm:mx-4 max-h-[90vh] overflow-y-auto p-4 sm:p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
             <button onclick="closeBulkTransferModal()"
                 class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2075,7 +2094,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
     <div id="bulk-transfer-modal"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
         <div
-            class="clay-panel w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+            class="clay-panel w-full max-w-2xl mx-3 sm:mx-4 max-h-[90vh] overflow-y-auto p-4 sm:p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl">
             <button onclick="closeBulkTransferModal()"
                 class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2193,7 +2212,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
     <!-- Dashboard detail modals -->
     <div id="modal-dashboard-chart"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
-        <div class="clay-panel w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl bg-white">
+        <div class="clay-panel w-full max-w-3xl mx-3 sm:mx-4 max-h-[90vh] overflow-y-auto p-4 sm:p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl bg-white">
             <button onclick="closeDashboardModal('chart')"
                 class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -2231,7 +2250,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
 
     <div id="modal-dashboard-riwayat"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
-        <div class="clay-panel w-full max-w-4xl mx-4 max-h-[90vh] p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl bg-white flex flex-col">
+        <div class="clay-panel w-full max-w-4xl mx-3 sm:mx-4 max-h-[90vh] p-4 sm:p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl bg-white flex flex-col">
             <button onclick="closeDashboardModal('riwayat')"
                 class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -2262,7 +2281,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
 
     <div id="modal-dashboard-aset"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
-        <div class="clay-panel w-full max-w-6xl mx-4 max-h-[90vh] p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl bg-white flex flex-col">
+        <div class="clay-panel w-full max-w-6xl mx-3 sm:mx-4 max-h-[90vh] p-4 sm:p-8 relative transform scale-95 transition-transform duration-300 shadow-2xl bg-white flex flex-col">
             <button onclick="closeDashboardModal('aset')"
                 class="absolute top-6 right-6 w-10 h-10 clay-btn flex items-center justify-center text-red-500 hover:text-red-700 !shadow-clay-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>

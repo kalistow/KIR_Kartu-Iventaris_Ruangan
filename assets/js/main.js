@@ -181,9 +181,54 @@ async function fetchRiwayat() {
 }
 
 
+// Mobile off-canvas sidebar drawer control.
+// Desktop/lg+ is untouched (sidebar stays static via lg: classes in HTML),
+// this only toggles the translate/overlay classes used below the lg breakpoint.
+window.toggleSidebar = function(forceState) {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (!sidebar || !overlay) return;
+
+    let shouldOpen;
+    if (forceState === 'open') {
+        shouldOpen = true;
+    } else if (forceState === 'close') {
+        shouldOpen = false;
+    } else {
+        shouldOpen = sidebar.classList.contains('-translate-x-full');
+    }
+
+    if (shouldOpen) {
+        sidebar.classList.remove('-translate-x-full');
+        sidebar.classList.add('translate-x-0');
+        overlay.classList.remove('hidden');
+        // Lock background scroll while the drawer is open (mobile only).
+        if (window.innerWidth < 1024) {
+            document.body.style.overflow = 'hidden';
+        }
+    } else {
+        sidebar.classList.add('-translate-x-full');
+        sidebar.classList.remove('translate-x-0');
+        overlay.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+};
+
+// Keep drawer state sane if the window is resized/rotated across the lg breakpoint.
+window.addEventListener('resize', function () {
+    if (window.innerWidth >= 1024) {
+        document.body.style.overflow = '';
+    }
+});
+
 window.switchView = function(viewName) {
     if (!VIEWS.includes(viewName)) return;
-    
+
+    // Auto-close the drawer on mobile/tablet after picking a menu item.
+    if (window.innerWidth < 1024) {
+        window.toggleSidebar('close');
+    }
+
     currentView = viewName;
 
     const importBtnHeader = document.getElementById('import-btn-header');
