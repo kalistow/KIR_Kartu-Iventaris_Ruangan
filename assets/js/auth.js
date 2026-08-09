@@ -18,6 +18,7 @@ loginForm.addEventListener('submit', async (e) => {
     return;
   }
   // Store session locally (optional)
+  localStorage.setItem('simbar.isDemo', 'false');
   if (data.session) localStorage.setItem('supabase.session', JSON.stringify(data.session));
   // Redirect to dashboard after successful login
   window.location.href = 'index.html';

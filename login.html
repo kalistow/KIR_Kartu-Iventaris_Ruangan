@@ -5,6 +5,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login Admin — SIMBAR Kesbangpol</title>
+    <script>
+        // Redirect to index if already logged in or in demo mode
+        (function() {
+            const isDemo = localStorage.getItem('simbar.isDemo') === 'true';
+            const localSession = localStorage.getItem('supabase.session');
+            if (isDemo || localSession) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
     <meta name="description"
         content="Halaman login admin Sistem Inventaris Barang (SIMBAR) Kesbangpol Kesatuan Bangsa dan Politik." />
 
@@ -165,6 +175,19 @@
             </button>
         </form>
 
+        <!-- Divider -->
+        <div class="flex items-center my-4">
+            <div class="flex-grow border-t border-slate-100"></div>
+            <span class="px-3 text-xs text-textMuted font-medium uppercase tracking-wider">atau</span>
+            <div class="flex-grow border-t border-slate-100"></div>
+        </div>
+
+        <!-- Demo Button -->
+        <button type="button" onclick="startDemoMode()"
+            class="w-full py-3 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-all duration-200 border border-slate-200 hover:shadow-sm active:scale-[0.98] flex items-center justify-center gap-2 text-sm">
+            💡 Coba Mode Demo
+        </button>
+
         <!-- Error Message -->
         <div id="error-msg"
             class="mt-4 text-center text-red-700 text-xs hidden bg-red-50 py-3 px-4 rounded-xl border border-red-200">
@@ -235,6 +258,13 @@
                 eyeIcon.classList.toggle('hidden', type === 'text');
                 eyeSlashIcon.classList.toggle('hidden', type === 'password');
             });
+        }
+
+        // Start Demo Mode
+        function startDemoMode() {
+            localStorage.setItem('simbar.isDemo', 'true');
+            localStorage.removeItem('supabase.session');
+            window.location.href = 'index.html';
         }
     </script>
 

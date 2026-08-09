@@ -386,6 +386,27 @@ supabaseClient
   .subscribe();
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Customize UI based on mode
+    const isDemo = localStorage.getItem('simbar.isDemo') === 'true';
+    if (isDemo) {
+        const emailEl = document.getElementById('user-email-display');
+        if (emailEl) emailEl.textContent = 'demo@kesbangpol.id';
+        const badgeEl = document.getElementById('demo-badge');
+        if (badgeEl) badgeEl.classList.remove('hidden');
+    } else {
+        const localSessionRaw = localStorage.getItem('supabase.session');
+        if (localSessionRaw) {
+            try {
+                const session = JSON.parse(localSessionRaw);
+                const email = session?.user?.email;
+                if (email) {
+                    const emailEl = document.getElementById('user-email-display');
+                    if (emailEl) emailEl.textContent = email;
+                }
+            } catch (e) {}
+        }
+    }
+
     loadAllData();
     switchView(currentView);
     
@@ -689,15 +710,23 @@ window.updateNonKirTabUI = function() {
 window.logoutAdmin = async function() {
     if (!confirm('Apakah Anda yakin ingin keluar?')) return;
     try {
-        if (typeof supabaseClient !== 'undefined') {
+        if (typeof supabaseClient !== 'undefined' && typeof supabaseClient.auth !== 'undefined') {
             await supabaseClient.auth.signOut();
         }
-        localStorage.removeItem('supabase.session');
-        window.location.href = 'login.html';
     } catch (err) {
         console.error('Error saat logout:', err);
-        window.location.href = 'login.html';
     }
+    
+    // Clear auth and demo states
+    localStorage.removeItem('supabase.session');
+    localStorage.removeItem('simbar.isDemo');
+    localStorage.removeItem('simbar.demo.assets');
+    localStorage.removeItem('simbar.demo.master_bmd');
+    localStorage.removeItem('simbar.demo.riwayat_barang');
+    localStorage.removeItem('simbar.demo.verification_queue');
+    localStorage.removeItem('simbar.demo.import_sessions');
+    
+    window.location.href = 'login.html';
 };
 
 window.toggleSidebarGroup = function(groupId, forceState) {

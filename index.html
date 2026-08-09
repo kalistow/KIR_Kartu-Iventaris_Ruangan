@@ -5,6 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard SIM-KIR Kesbangpol (Claymorphism)</title>
+    <script>
+        // Bypass confirm dialog in automated tests
+        if (window.location.search.includes('bypass_confirm=true')) {
+            window.confirm = () => true;
+        }
+        // Redirect to login if not logged in and not in demo mode
+        (function() {
+            const isDemo = localStorage.getItem('simbar.isDemo') === 'true';
+            const localSession = localStorage.getItem('supabase.session');
+            if (!isDemo && !localSession) {
+                window.location.replace('login.html');
+            }
+        })();
+    </script>
 
     <!-- Google Fonts: Roboto Flex -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -130,6 +144,7 @@
             <div>
                 <h1 class="font-extrabold text-2xl leading-tight tracking-tight">SIMBAR</h1>
                 <p class="text-sm text-textMuted font-medium uppercase tracking-widest">Kesbangpol</p>
+                <span id="demo-badge" class="hidden text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200 px-2.5 py-0.5 rounded-full mt-1.5 inline-block animate-pulse">MODE DEMO</span>
             </div>
         </div>
 
@@ -265,7 +280,7 @@
                 </div>
                 <div class="flex-1 overflow-hidden">
                     <p class="font-extrabold text-sm truncate group-hover:text-red-700 transition-colors">Keluar</p>
-                    <p class="text-xs text-textMuted font-bold truncate group-hover:text-red-500 transition-colors">
+                    <p id="user-email-display" class="text-xs text-textMuted font-bold truncate group-hover:text-red-500 transition-colors">
                         admin@kesbangpol</p>
                 </div>
                 <svg class="w-5 h-5 text-textMuted group-hover:text-red-600 transition-colors" fill="none"
@@ -2828,6 +2843,7 @@ GRANT INSERT, UPDATE, DELETE ON public.import_logs TO anon, authenticated;
         class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none max-w-sm w-full"></div>
 
     <!-- App Configurations & Main Entry -->
+    <script src="assets/js/config/demo_seed.js"></script>
     <script src="assets/js/config/supabase.js"></script>
     <script src="assets/js/main.js"></script>
 
