@@ -98,6 +98,27 @@ function getActiveRooms(assets = globalAssets) {
 }
 
 async function loadAllData() {
+    const isDemo = localStorage.getItem('simbar.isDemo') === 'true';
+    if (!isDemo) {
+        try {
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            if (error || !session) {
+                console.warn('[Auth] Sesi tidak valid atau kedaluwarsa, mengalihkan ke login...');
+                localStorage.removeItem('supabase.session');
+                window.location.replace('login.html');
+                return;
+            }
+            // Update session local storage dengan session terbaru (refresh token baru)
+            localStorage.setItem('supabase.session', JSON.stringify(session));
+        } catch (e) {
+            console.error('[Auth] Gagal memverifikasi sesi aktif:', e);
+            if (!localStorage.getItem('supabase.session')) {
+                window.location.replace('login.html');
+                return;
+            }
+        }
+    }
+
     await checkDatabaseTables();
     await fetchAssets();
     await fetchMasterBmd();
